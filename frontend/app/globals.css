@@ -1,0 +1,80 @@
+@import 'tailwindcss';
+
+:root {
+  --sidebar-width: 280px;
+  --header-height: 64px;
+  --bg-primary: #090e1a;
+  --bg-surface: #0f172a;
+  --bg-card: #141f2e;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border: #1e293b;
+  --accent: #22c55e;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Status dots */
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-active {
+  background-color: #22c55e;
+  box-shadow: 0 0 6px #22c55e80;
+  animation: pulse-dot 2s infinite;
+}
+.status-idle {
+  background-color: #64748b;
+}
+.status-error {
+  background-color: #ef4444;
+  box-shadow: 0 0 6px #ef444480;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Dark background utilities (complement Tailwind) */
+.bg-dark-850 {
+  background-color: #141f2e;
+}
+
+/* Army glow for key metrics */
+.army-glow {
+  text-shadow: 0 0 20px #22c55e40;
+}
