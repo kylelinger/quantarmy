@@ -172,7 +172,8 @@ export function useCompanyWS(companyId: string | null) {
   useEffect(() => {
     if (!companyId) return
 
-    const ws = new WebSocket(`ws://localhost:8000/ws/${companyId}`)
+    const wsBase = process.env.NEXT_PUBLIC_API_URL?.replace('http', 'ws') || 'ws://localhost:8000'
+    const ws = new WebSocket(`${wsBase}/ws/${companyId}`)
     wsRef.current = ws
 
     ws.onopen = () => setConnected(true)
