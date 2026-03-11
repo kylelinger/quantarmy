@@ -62,6 +62,7 @@ export interface Role {
   id: string
   company_id: string
   role_type: RoleType
+  active_skill_id: string | null
   active_skill: Skill | null
   config: Record<string, any>
   status: 'active' | 'idle' | 'error'
