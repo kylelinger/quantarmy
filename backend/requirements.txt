@@ -6,3 +6,5 @@ aiosqlite>=0.20.0
 httpx>=0.28.0
 websockets>=14.0
 python-multipart>=0.0.18
+greenlet>=3.0.0
+greenlet>=3.0.0

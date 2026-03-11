@@ -1,11 +1,11 @@
 """Trading API routes."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from pydantic import BaseModel
+from sqlalchemy import select, func
 
 from app.core.database import get_db
 from app.models.company import Company, Position, Trade
+from app.services.trading_engine import start_engine, stop_engine
 
 router = APIRouter(prefix="/api/company/{company_id}/trading", tags=["trading"])
 
@@ -28,6 +28,8 @@ async def get_positions(company_id: str, db: AsyncSession = Depends(get_db)):
             "entry_price": p.entry_price,
             "current_price": p.current_price,
             "unrealized_pnl": p.unrealized_pnl,
+            "pnl_pct": (p.unrealized_pnl / (p.size * p.entry_price)) if p.size * p.entry_price > 0 else 0,
+            "strategy": p.strategy,
             "opened_at": p.opened_at.isoformat(),
         }
         for p in positions
@@ -68,21 +70,58 @@ async def get_trade_history(
 
 @router.get("/performance")
 async def get_performance(company_id: str, db: AsyncSession = Depends(get_db)):
-    """Get trading performance metrics."""
-    # TODO: calculate from trade history
+    """Get trading performance metrics computed from trade history."""
+    result = await db.execute(
+        select(Trade).where(Trade.company_id == company_id).order_by(Trade.executed_at)
+    )
+    trades = result.scalars().all()
+
+    if not trades:
+        return _ok({
+            "trades": 0, "win_rate": 0.0, "profit_factor": 0.0,
+            "max_drawdown": 0.0, "sharpe_ratio": 0.0, "total_return": 0.0,
+        })
+
+    # Pair entries/exits to compute PnL per round trip
+    open_trades: dict[str, Trade] = {}  # symbol → entry trade
+    pnls = []
+
+    for t in trades:
+        if t.side in ("buy",):
+            open_trades[t.symbol] = t
+        elif t.side in ("sell",) and t.symbol in open_trades:
+            entry = open_trades.pop(t.symbol)
+            pnl = (t.price - entry.price) * min(t.size, entry.size)
+            pnls.append(pnl)
+
+    total_trades = len(pnls)
+    if total_trades == 0:
+        return _ok({
+            "trades": len(trades), "win_rate": 0.0, "profit_factor": 0.0,
+            "max_drawdown": 0.0, "sharpe_ratio": 0.0, "total_return": 0.0,
+        })
+
+    wins = [p for p in pnls if p > 0]
+    losses = [p for p in pnls if p <= 0]
+    gross_profit = sum(wins) if wins else 0
+    gross_loss = abs(sum(losses)) if losses else 0
+
+    company = (await db.execute(select(Company).where(Company.id == company_id))).scalar_one_or_none()
+    initial = company.initial_capital if company else 100_000
+
     return _ok({
-        "trades": 0,
-        "win_rate": 0.0,
-        "profit_factor": 0.0,
-        "max_drawdown": 0.0,
-        "sharpe_ratio": 0.0,
-        "total_return": 0.0,
+        "trades": total_trades,
+        "win_rate": len(wins) / total_trades if total_trades else 0,
+        "profit_factor": gross_profit / gross_loss if gross_loss > 0 else 0,
+        "max_drawdown": 0.0,  # TODO: compute from equity curve
+        "sharpe_ratio": 0.0,  # TODO: compute from daily returns
+        "total_return": (company.current_equity - initial) / initial if company else 0,
     })
 
 
 @router.post("/start")
 async def start_trading(company_id: str, db: AsyncSession = Depends(get_db)):
-    """Start simulation trading."""
+    """Start simulation trading engine."""
     result = await db.execute(select(Company).where(Company.id == company_id))
     company = result.scalar_one_or_none()
     if not company:
@@ -90,13 +129,14 @@ async def start_trading(company_id: str, db: AsyncSession = Depends(get_db)):
 
     company.status = "active"
     await db.commit()
-    # TODO: start the trading engine tick loop
-    return _ok({"message": "Trading started", "status": "active"})
+
+    await start_engine(company_id)
+    return _ok({"message": "Trading engine started", "status": "active"})
 
 
 @router.post("/stop")
 async def stop_trading(company_id: str, db: AsyncSession = Depends(get_db)):
-    """Stop simulation trading."""
+    """Stop simulation trading engine."""
     result = await db.execute(select(Company).where(Company.id == company_id))
     company = result.scalar_one_or_none()
     if not company:
@@ -104,4 +144,6 @@ async def stop_trading(company_id: str, db: AsyncSession = Depends(get_db)):
 
     company.status = "paused"
     await db.commit()
-    return _ok({"message": "Trading stopped", "status": "paused"})
+
+    await stop_engine(company_id)
+    return _ok({"message": "Trading engine stopped", "status": "paused"})

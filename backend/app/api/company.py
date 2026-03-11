@@ -48,6 +48,7 @@ async def create_company(req: CreateCompanyRequest, db: AsyncSession = Depends(g
         market=req.market,
     )
     db.add(company)
+    await db.flush()  # Generate company.id
 
     # Create all roles
     for role_type in ROLE_TYPES:

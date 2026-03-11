@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.models.skill import Skill, SkillImport
+from app.services.backtest_engine import backtest_engine
 
 router = APIRouter(prefix="/api/skills", tags=["skills"])
 
@@ -118,17 +119,38 @@ async def get_import_status(import_id: str, db: AsyncSession = Depends(get_db)):
 async def backtest_skill(skill_id: str, req: BacktestRequest, db: AsyncSession = Depends(get_db)):
     """Run a backtest on a skill."""
     result = await db.execute(select(Skill).where(Skill.id == skill_id))
-    skill = result.scalar_one_or_none()
-    if not skill:
+    skill_db = result.scalar_one_or_none()
+    if not skill_db:
         raise HTTPException(status_code=404, detail="Skill not found")
 
-    # TODO: implement actual backtest via sandbox
-    return _ok({
-        "trades": 0,
-        "win_rate": 0.0,
-        "profit_factor": 0.0,
-        "max_drawdown": 0.0,
-        "sharpe_ratio": 0.0,
-        "total_return": 0.0,
-        "message": "Backtest engine not yet implemented",
-    })
+    # Resolve skill instance
+    from app.skills.builtin.psar_trend import PSARTrendSkill
+    from app.skills.builtin.risk_officer import RiskOfficerSkill
+
+    _builtin_map = {
+        "PSAR Trend": PSARTrendSkill,
+        "Basic Risk Officer": RiskOfficerSkill,
+    }
+
+    if skill_db.source == "builtin" and skill_db.name in _builtin_map:
+        skill_instance = _builtin_map[skill_db.name]()
+    else:
+        raise HTTPException(status_code=400, detail="Only built-in skills support backtest currently")
+
+    # Run backtest
+    config = req.config or {}
+    bt_result = await backtest_engine.run(
+        skill=skill_instance,
+        symbol=req.symbol,
+        period=req.period,
+        config=config,
+    )
+
+    if bt_result.error:
+        return _ok({"error": bt_result.error, **bt_result.to_dict()})
+
+    # Store result in skill
+    skill_db.backtest_result = bt_result.to_dict()
+    await db.commit()
+
+    return _ok(bt_result.to_dict())
