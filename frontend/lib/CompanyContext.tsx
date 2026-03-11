@@ -27,10 +27,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Load company ID from localStorage
+  // Load company ID from localStorage (default to demo)
   useEffect(() => {
     const stored = localStorage.getItem('quantarmy_company_id')
-    if (stored) setCompanyId(stored)
+    setCompanyId(stored || 'demo-001')
     setLoading(false)
   }, [])
 
