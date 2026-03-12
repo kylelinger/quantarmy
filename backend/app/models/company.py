@@ -30,6 +30,7 @@ class Company(Base):
     roles: Mapped[list["Role"]] = relationship(back_populates="company", cascade="all, delete-orphan")
     positions: Mapped[list["Position"]] = relationship(back_populates="company", cascade="all, delete-orphan")
     trades: Mapped[list["Trade"]] = relationship(back_populates="company", cascade="all, delete-orphan")
+    watchlist: Mapped[list["WatchlistItem"]] = relationship(back_populates="company", cascade="all, delete-orphan")
 
 
 class Role(Base):
@@ -78,6 +79,30 @@ class Trade(Base):
     executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     company: Mapped["Company"] = relationship(back_populates="trades")
+
+
+class WatchlistItem(Base):
+    """User's watchlist — the symbols they want the team to analyze."""
+    __tablename__ = "watchlist"
+
+    id: Mapped[str] = mapped_column(String(16), primary_key=True, default=_uuid)
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"))
+    symbol: Mapped[str] = mapped_column(String(20))        # e.g. BTCUSDT, AAPL
+    display_name: Mapped[str] = mapped_column(String(50), default="")  # e.g. Bitcoin, Apple
+    market: Mapped[str] = mapped_column(String(20), default="crypto")  # crypto | stock
+    notes: Mapped[str] = mapped_column(String(500), default="")  # user's personal notes
+    tags: Mapped[list] = mapped_column(JSON, default=list)  # user-defined tags
+    priority: Mapped[int] = mapped_column(Integer, default=0)  # 0=normal, 1=high, 2=critical
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    # Latest team analysis (cached, updated by roles)
+    last_analysis: Mapped[dict] = mapped_column(JSON, default=dict)
+    # e.g. {"strategist": {"signal": "LONG", "confidence": 0.72, "reason": "...", "at": "..."},
+    #        "risk_officer": {"risk_score": 3, "notes": "...", "at": "..."},
+    #        "collector": {"sentiment": 0.6, "headlines": [...], "at": "..."},
+    #        "analyst": {"trend": "bullish", "support": 85000, "resistance": 92000, "at": "..."}}
+
+    company: Mapped["Company"] = relationship(back_populates="watchlist")
 
 
 class Message(Base):

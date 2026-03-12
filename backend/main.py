@@ -10,6 +10,7 @@ from app.api.roles import router as roles_router
 from app.api.skills import router as skills_router
 from app.api.trading import router as trading_router
 from app.api.market import router as market_router
+from app.api.watchlist import router as watchlist_router
 from app.ws.router import router as ws_router
 from app.skills.seed import seed_builtin_skills
 
@@ -52,6 +53,7 @@ app.include_router(roles_router)
 app.include_router(skills_router)
 app.include_router(trading_router)
 app.include_router(market_router)
+app.include_router(watchlist_router)
 app.include_router(ws_router)
 
 

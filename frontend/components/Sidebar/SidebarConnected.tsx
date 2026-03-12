@@ -88,7 +88,18 @@ export function SidebarConnected() {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="p-3 border-t border-dark-800 space-y-2">
+      <div className="p-3 border-t border-dark-800 space-y-1">
+        <Link
+          href="/company/watchlist"
+          className={cn(
+            'flex items-center gap-2 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors',
+            pathname?.includes('/watchlist')
+              ? 'bg-army-900/30 text-army-400'
+              : 'text-dark-300 hover:text-dark-100 hover:bg-dark-850'
+          )}
+        >
+          📋 自选标的
+        </Link>
         {companyId && (
           <button
             onClick={handleToggle}

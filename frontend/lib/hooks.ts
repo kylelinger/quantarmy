@@ -203,6 +203,58 @@ export function useCompanyWS(companyId: string | null) {
   return { events, connected }
 }
 
+// --- Watchlist ---
+
+export function useWatchlist(companyId: string | null) {
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const refresh = useCallback(async () => {
+    if (!companyId) return
+    setLoading(true)
+    try {
+      const data = await apiFetch<any[]>(`/company/${companyId}/watchlist`)
+      setItems(data)
+    } catch (e) {
+      console.error('Failed to fetch watchlist:', e)
+    } finally {
+      setLoading(false)
+    }
+  }, [companyId])
+
+  useEffect(() => { refresh() }, [refresh])
+  return { items, loading, refresh }
+}
+
+export async function addToWatchlist(companyId: string, symbol: string, displayName?: string, market = 'crypto') {
+  return apiFetch<any>(`/company/${companyId}/watchlist`, {
+    method: 'POST',
+    body: JSON.stringify({ symbol, display_name: displayName || symbol, market }),
+  })
+}
+
+export async function batchAddWatchlist(companyId: string, symbols: Array<{ symbol: string; display_name?: string; market?: string }>) {
+  return apiFetch<any>(`/company/${companyId}/watchlist/batch`, {
+    method: 'POST',
+    body: JSON.stringify({ symbols }),
+  })
+}
+
+export async function removeFromWatchlist(companyId: string, itemId: string) {
+  return apiFetch<any>(`/company/${companyId}/watchlist/${itemId}`, { method: 'DELETE' })
+}
+
+export async function updateWatchlistItem(companyId: string, itemId: string, updates: { notes?: string; tags?: string[]; priority?: number }) {
+  return apiFetch<any>(`/company/${companyId}/watchlist/${itemId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  })
+}
+
+export async function requestAnalysis(companyId: string, itemId: string) {
+  return apiFetch<any>(`/company/${companyId}/watchlist/${itemId}/analyze`, { method: 'POST' })
+}
+
 // --- Performance ---
 
 export function usePerformance(companyId: string | null) {

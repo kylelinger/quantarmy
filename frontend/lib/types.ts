@@ -125,6 +125,18 @@ export interface BacktestResult {
   total_return: number
 }
 
+export interface WatchlistItem {
+  id: string
+  symbol: string
+  display_name: string
+  market: MarketType
+  notes: string
+  tags: string[]
+  priority: number  // 0=normal, 1=high, 2=critical
+  added_at: string
+  last_analysis: Record<string, any>  // role_type → analysis data
+}
+
 export interface Signal {
   type: 'trade' | 'risk' | 'info' | 'decision'
   action: string
