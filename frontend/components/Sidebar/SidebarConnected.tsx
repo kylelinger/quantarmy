@@ -21,7 +21,7 @@ export function SidebarConnected() {
     <aside className="w-[var(--sidebar-width)] h-screen bg-dark-900 border-r border-dark-800 flex flex-col fixed left-0 top-0 z-10">
       {/* Company Header */}
       <div className="p-5 border-b border-dark-800">
-        <Link href="/company" className="block">
+        <Link href="/company/overview" className="block">
           <h2 className="text-lg font-bold text-dark-100 truncate">{company?.name ?? '量化军团'}</h2>
           <p className="text-xs text-dark-500 mt-1">QuantArmy v1.0</p>
         </Link>
