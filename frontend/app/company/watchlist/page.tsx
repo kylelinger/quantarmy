@@ -436,7 +436,6 @@ function WatchlistCard({
             <span className="text-lg font-bold text-dark-100 group-hover:text-army-400 transition-colors">
               {item.symbol}
             </span>
-            {priority.icon && <span>{priority.icon}</span>}
             <span className="text-dark-500 text-sm">{item.display_name}</span>
           </div>
           {item.notes && (
