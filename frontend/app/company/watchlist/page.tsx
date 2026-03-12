@@ -1,38 +1,95 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useCompanyContext } from '@/lib/CompanyContext'
 import { useWatchlist, addToWatchlist, removeFromWatchlist, updateWatchlistItem, requestAnalysis, batchAddWatchlist } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
 import { ROLES } from '@/lib/types'
 
-// Popular symbol suggestions
-const CRYPTO_POPULAR = [
-  { symbol: 'BTCUSDT', name: 'Bitcoin' },
-  { symbol: 'ETHUSDT', name: 'Ethereum' },
-  { symbol: 'SOLUSDT', name: 'Solana' },
-  { symbol: 'BNBUSDT', name: 'BNB' },
-  { symbol: 'XRPUSDT', name: 'XRP' },
-  { symbol: 'ADAUSDT', name: 'Cardano' },
-  { symbol: 'DOGEUSDT', name: 'Dogecoin' },
-  { symbol: 'AVAXUSDT', name: 'Avalanche' },
-  { symbol: 'DOTUSDT', name: 'Polkadot' },
-  { symbol: 'LINKUSDT', name: 'Chainlink' },
-  { symbol: 'MATICUSDT', name: 'Polygon' },
-  { symbol: 'NEARUSDT', name: 'NEAR Protocol' },
+// Full searchable symbol database
+const ALL_CRYPTO = [
+  { symbol: 'BTCUSDT', name: 'Bitcoin', aliases: ['BTC', '比特币'] },
+  { symbol: 'ETHUSDT', name: 'Ethereum', aliases: ['ETH', '以太坊'] },
+  { symbol: 'SOLUSDT', name: 'Solana', aliases: ['SOL'] },
+  { symbol: 'BNBUSDT', name: 'BNB', aliases: ['币安币'] },
+  { symbol: 'XRPUSDT', name: 'XRP', aliases: ['瑞波'] },
+  { symbol: 'ADAUSDT', name: 'Cardano', aliases: ['ADA'] },
+  { symbol: 'DOGEUSDT', name: 'Dogecoin', aliases: ['DOGE', '狗狗币'] },
+  { symbol: 'AVAXUSDT', name: 'Avalanche', aliases: ['AVAX'] },
+  { symbol: 'DOTUSDT', name: 'Polkadot', aliases: ['DOT', '波卡'] },
+  { symbol: 'LINKUSDT', name: 'Chainlink', aliases: ['LINK'] },
+  { symbol: 'MATICUSDT', name: 'Polygon', aliases: ['MATIC', 'POL'] },
+  { symbol: 'NEARUSDT', name: 'NEAR Protocol', aliases: ['NEAR'] },
+  { symbol: 'UNIUSDT', name: 'Uniswap', aliases: ['UNI'] },
+  { symbol: 'ATOMUSDT', name: 'Cosmos', aliases: ['ATOM'] },
+  { symbol: 'LTCUSDT', name: 'Litecoin', aliases: ['LTC', '莱特币'] },
+  { symbol: 'APTUSDT', name: 'Aptos', aliases: ['APT'] },
+  { symbol: 'ARBUSDT', name: 'Arbitrum', aliases: ['ARB'] },
+  { symbol: 'OPUSDT', name: 'Optimism', aliases: ['OP'] },
+  { symbol: 'FILUSDT', name: 'Filecoin', aliases: ['FIL'] },
+  { symbol: 'AAVEUSDT', name: 'Aave', aliases: ['AAVE'] },
+  { symbol: 'SHIBUSDT', name: 'Shiba Inu', aliases: ['SHIB', '柴犬币'] },
+  { symbol: 'TRXUSDT', name: 'TRON', aliases: ['TRX', '波场'] },
+  { symbol: 'ICPUSDT', name: 'Internet Computer', aliases: ['ICP'] },
+  { symbol: 'MKRUSDT', name: 'Maker', aliases: ['MKR'] },
+  { symbol: 'INJUSDT', name: 'Injective', aliases: ['INJ'] },
+  { symbol: 'SUIUSDT', name: 'Sui', aliases: ['SUI'] },
+  { symbol: 'SEIUSDT', name: 'Sei', aliases: ['SEI'] },
+  { symbol: 'TIAUSDT', name: 'Celestia', aliases: ['TIA'] },
+  { symbol: 'JUPUSDT', name: 'Jupiter', aliases: ['JUP'] },
+  { symbol: 'WIFUSDT', name: 'dogwifhat', aliases: ['WIF'] },
+  { symbol: 'PEPEUSDT', name: 'Pepe', aliases: ['PEPE'] },
+  { symbol: 'RENDERUSDT', name: 'Render', aliases: ['RNDR', 'RENDER'] },
+  { symbol: 'FETUSDT', name: 'Fetch.ai', aliases: ['FET'] },
+  { symbol: 'RUNEUSDT', name: 'THORChain', aliases: ['RUNE'] },
+  { symbol: 'PENDLEUSDT', name: 'Pendle', aliases: ['PENDLE'] },
+  { symbol: 'ENAUSDT', name: 'Ethena', aliases: ['ENA'] },
+  { symbol: 'ONDOUSDT', name: 'Ondo', aliases: ['ONDO'] },
+  { symbol: 'STXUSDT', name: 'Stacks', aliases: ['STX'] },
 ]
 
-const STOCK_POPULAR = [
-  { symbol: 'AAPL', name: 'Apple' },
-  { symbol: 'MSFT', name: 'Microsoft' },
-  { symbol: 'GOOGL', name: 'Google' },
-  { symbol: 'AMZN', name: 'Amazon' },
-  { symbol: 'NVDA', name: 'NVIDIA' },
-  { symbol: 'TSLA', name: 'Tesla' },
-  { symbol: 'META', name: 'Meta' },
-  { symbol: 'AMD', name: 'AMD' },
+const ALL_STOCKS = [
+  { symbol: 'AAPL', name: 'Apple', aliases: ['苹果'] },
+  { symbol: 'MSFT', name: 'Microsoft', aliases: ['微软'] },
+  { symbol: 'GOOGL', name: 'Google / Alphabet', aliases: ['谷歌', 'GOOG'] },
+  { symbol: 'AMZN', name: 'Amazon', aliases: ['亚马逊'] },
+  { symbol: 'NVDA', name: 'NVIDIA', aliases: ['英伟达'] },
+  { symbol: 'TSLA', name: 'Tesla', aliases: ['特斯拉'] },
+  { symbol: 'META', name: 'Meta Platforms', aliases: ['Facebook', 'FB', '脸书'] },
+  { symbol: 'AMD', name: 'AMD', aliases: ['超威半导体'] },
+  { symbol: 'NFLX', name: 'Netflix', aliases: ['奈飞'] },
+  { symbol: 'AVGO', name: 'Broadcom', aliases: ['博通'] },
+  { symbol: 'CRM', name: 'Salesforce', aliases: [] },
+  { symbol: 'ORCL', name: 'Oracle', aliases: ['甲骨文'] },
+  { symbol: 'INTC', name: 'Intel', aliases: ['英特尔'] },
+  { symbol: 'PLTR', name: 'Palantir', aliases: [] },
+  { symbol: 'COIN', name: 'Coinbase', aliases: [] },
+  { symbol: 'MSTR', name: 'MicroStrategy', aliases: [] },
+  { symbol: 'ARM', name: 'ARM Holdings', aliases: [] },
+  { symbol: 'SMCI', name: 'Super Micro Computer', aliases: [] },
+  { symbol: 'SNOW', name: 'Snowflake', aliases: [] },
+  { symbol: 'SQ', name: 'Block (Square)', aliases: [] },
+  { symbol: 'SHOP', name: 'Shopify', aliases: [] },
+  { symbol: 'JPM', name: 'JPMorgan Chase', aliases: ['摩根大通'] },
+  { symbol: 'V', name: 'Visa', aliases: [] },
+  { symbol: 'MA', name: 'Mastercard', aliases: ['万事达'] },
+  { symbol: 'BAC', name: 'Bank of America', aliases: ['美国银行'] },
+  { symbol: 'WMT', name: 'Walmart', aliases: ['沃尔玛'] },
+  { symbol: 'DIS', name: 'Walt Disney', aliases: ['迪士尼'] },
+  { symbol: 'BABA', name: 'Alibaba', aliases: ['阿里巴巴'] },
+  { symbol: 'PDD', name: 'PDD Holdings', aliases: ['拼多多'] },
+  { symbol: 'JD', name: 'JD.com', aliases: ['京东'] },
+  { symbol: 'BIDU', name: 'Baidu', aliases: ['百度'] },
+  { symbol: 'NIO', name: 'NIO', aliases: ['蔚来'] },
+  { symbol: 'LI', name: 'Li Auto', aliases: ['理想汽车'] },
+  { symbol: 'XPEV', name: 'XPeng', aliases: ['小鹏汽车'] },
 ]
+
+// For backward compat with hot-tags
+const CRYPTO_POPULAR = ALL_CRYPTO.slice(0, 12)
+const STOCK_POPULAR = ALL_STOCKS.slice(0, 8)
 
 const PRIORITY_LABELS: Record<number, { label: string; color: string; icon: string }> = {
   0: { label: '普通', color: 'text-dark-500', icon: '' },
@@ -41,18 +98,44 @@ const PRIORITY_LABELS: Record<number, { label: string; color: string; icon: stri
 }
 
 export default function WatchlistPage() {
+  const router = useRouter()
   const { companyId, company } = useCompanyContext()
   const { items, loading, refresh } = useWatchlist(companyId)
-  const [adding, setAdding] = useState(false)
-  const [customSymbol, setCustomSymbol] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [highlightIdx, setHighlightIdx] = useState(-1)
   const [selectedMarket, setSelectedMarket] = useState<'crypto' | 'stock'>(
     (company?.market as 'crypto' | 'stock') || 'crypto'
   )
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState<string | null>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const existingSymbols = new Set(items.map((i: any) => i.symbol))
+  const allSymbols = selectedMarket === 'crypto' ? ALL_CRYPTO : ALL_STOCKS
   const suggestions = selectedMarket === 'crypto' ? CRYPTO_POPULAR : STOCK_POPULAR
+
+  // Filter search results
+  const searchResults = searchQuery.trim().length > 0
+    ? allSymbols.filter(s => {
+        const q = searchQuery.toUpperCase()
+        return s.symbol.includes(q) ||
+               s.name.toUpperCase().includes(q) ||
+               s.aliases.some(a => a.toUpperCase().includes(q))
+      }).slice(0, 10)
+    : []
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleAdd = async (symbol: string, displayName: string) => {
     if (!companyId) return
@@ -64,10 +147,42 @@ export default function WatchlistPage() {
     }
   }
 
-  const handleAddCustom = async () => {
-    if (!customSymbol.trim() || !companyId) return
-    await handleAdd(customSymbol.trim().toUpperCase(), customSymbol.trim().toUpperCase())
-    setCustomSymbol('')
+  const handleSelectResult = async (item: typeof allSymbols[0]) => {
+    if (existingSymbols.has(item.symbol)) {
+      // Already added — navigate to detail
+      router.push(`/company/watchlist/${encodeURIComponent(item.symbol)}`)
+    } else {
+      // Add then navigate
+      await handleAdd(item.symbol, item.name)
+      router.push(`/company/watchlist/${encodeURIComponent(item.symbol)}`)
+    }
+    setSearchQuery('')
+    setShowDropdown(false)
+    setHighlightIdx(-1)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showDropdown || searchResults.length === 0) {
+      if (e.key === 'Enter' && searchQuery.trim()) {
+        // Direct add if no results match
+        handleAdd(searchQuery.trim().toUpperCase(), searchQuery.trim().toUpperCase())
+        setSearchQuery('')
+      }
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlightIdx(prev => Math.min(prev + 1, searchResults.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlightIdx(prev => Math.max(prev - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      const idx = highlightIdx >= 0 ? highlightIdx : 0
+      handleSelectResult(searchResults[idx])
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false)
+    }
   }
 
   const handleRemove = async (itemId: string) => {
@@ -135,59 +250,122 @@ export default function WatchlistPage() {
           </div>
         </div>
 
-        {/* Custom input */}
-        <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            placeholder={selectedMarket === 'crypto' ? '输入交易对，如 BTCUSDT' : '输入股票代码，如 AAPL'}
-            value={customSymbol}
-            onChange={(e) => setCustomSymbol(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddCustom()}
-            className="flex-1 bg-dark-800 text-dark-200 rounded-lg px-4 py-3 text-sm border border-dark-700 focus:border-army-600 focus:outline-none"
-          />
-          <button
-            onClick={handleAddCustom}
-            disabled={!customSymbol.trim()}
-            className="px-6 py-3 bg-army-600 hover:bg-army-500 disabled:bg-dark-700 disabled:text-dark-500 text-white text-sm rounded-lg transition-colors"
-          >
-            + 添加
-          </button>
+        {/* Search with autocomplete dropdown */}
+        <div ref={searchRef} className="relative mb-4">
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-500">🔍</span>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder={selectedMarket === 'crypto' ? '搜索加密货币... BTC、比特币、Ethereum' : '搜索股票... AAPL、苹果、Tesla'}
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setShowDropdown(true)
+                setHighlightIdx(-1)
+              }}
+              onFocus={() => setShowDropdown(true)}
+              onKeyDown={handleKeyDown}
+              className="w-full bg-dark-800 text-dark-200 rounded-lg pl-10 pr-4 py-3.5 text-sm border border-dark-700 focus:border-army-600 focus:outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(''); setShowDropdown(false); inputRef.current?.focus() }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-300"
+              >✕</button>
+            )}
+          </div>
+
+          {/* Dropdown results */}
+          {showDropdown && searchQuery.trim().length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-dark-850 border border-dark-700 rounded-lg shadow-xl max-h-80 overflow-y-auto">
+              {searchResults.length > 0 ? (
+                searchResults.map((item, idx) => {
+                  const added = existingSymbols.has(item.symbol)
+                  return (
+                    <button
+                      key={item.symbol}
+                      onClick={() => handleSelectResult(item)}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-dark-800 last:border-0',
+                        idx === highlightIdx ? 'bg-dark-700' : 'hover:bg-dark-800'
+                      )}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-dark-100 text-sm">{item.symbol}</span>
+                          <span className="text-dark-400 text-sm">{item.name}</span>
+                        </div>
+                      </div>
+                      {added ? (
+                        <span className="text-xs text-dark-500 flex items-center gap-1">
+                          ✓ 已添加 <span className="text-army-500">→ 查看</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-army-400 px-2 py-1 bg-army-900/30 rounded">
+                          + 添加并查看
+                        </span>
+                      )}
+                    </button>
+                  )
+                })
+              ) : (
+                <div className="px-4 py-6 text-center text-dark-500 text-sm">
+                  <p>没有找到 "{searchQuery}"</p>
+                  <button
+                    onClick={() => {
+                      handleAdd(searchQuery.trim().toUpperCase(), searchQuery.trim().toUpperCase())
+                      setSearchQuery('')
+                      setShowDropdown(false)
+                    }}
+                    className="mt-2 text-army-400 hover:text-army-300"
+                  >
+                    手动添加 {searchQuery.trim().toUpperCase()} →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Quick suggestions */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-dark-500 uppercase tracking-wider">热门推荐</p>
-            <button
-              onClick={handleBatchAdd}
-              className="text-xs text-army-400 hover:text-army-300 transition-colors"
-            >
-              一键添加全部
-            </button>
+        {/* Hot tags (only when not searching) */}
+        {!searchQuery && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-dark-500 uppercase tracking-wider">热门推荐</p>
+              <button
+                onClick={handleBatchAdd}
+                className="text-xs text-army-400 hover:text-army-300 transition-colors"
+              >
+                一键添加全部
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map(s => {
+                const added = existingSymbols.has(s.symbol)
+                return (
+                  <button
+                    key={s.symbol}
+                    onClick={() => added
+                      ? router.push(`/company/watchlist/${encodeURIComponent(s.symbol)}`)
+                      : handleAdd(s.symbol, s.name)
+                    }
+                    className={cn(
+                      'px-3 py-2 rounded-lg text-sm border transition-colors',
+                      added
+                        ? 'bg-dark-800 border-dark-700 text-dark-500 hover:border-dark-600 cursor-pointer'
+                        : 'bg-dark-850 border-dark-700 text-dark-300 hover:border-army-600 hover:text-army-400'
+                    )}
+                  >
+                    <span className="font-medium">{s.symbol}</span>
+                    <span className="text-dark-500 ml-1 text-xs">{s.name}</span>
+                    {added && <span className="ml-1 text-dark-600">✓</span>}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map(s => {
-              const added = existingSymbols.has(s.symbol)
-              return (
-                <button
-                  key={s.symbol}
-                  onClick={() => !added && handleAdd(s.symbol, s.name)}
-                  disabled={added}
-                  className={cn(
-                    'px-3 py-2 rounded-lg text-sm border transition-colors',
-                    added
-                      ? 'bg-dark-800 border-dark-700 text-dark-500 cursor-default'
-                      : 'bg-dark-850 border-dark-700 text-dark-300 hover:border-army-600 hover:text-army-400'
-                  )}
-                >
-                  <span className="font-medium">{s.symbol}</span>
-                  <span className="text-dark-500 ml-1 text-xs">{s.name}</span>
-                  {added && <span className="ml-1 text-dark-600">✓</span>}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Watchlist */}
