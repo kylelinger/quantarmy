@@ -5,6 +5,38 @@
 
 ---
 
+## 2026-03-12 — Session 5: Equity Curve + GitHub Import + V2 Design + Real Market Data
+
+**What happened:**
+- Equity curve chart component (lightweight-charts v5, area series + baseline)
+- Demo equity data API (30-day simulated curve)
+- Dashboard upgraded: equity curve + 8-role status grid + demo trading data
+- Landing page upgraded: bilingual hero, product flow, role grid, features
+- GitHub skill import API route (known repo shortcuts + generic fallback)
+- Real Binance market data: price, klines, ticker24h, batch endpoints
+- Frontend market API routes proxy Binance directly (Vercel standalone)
+- Live price ticker on symbol detail page (15s auto-refresh)
+- V2 Battle Mode design document (4 phases, challenge pairs, weighted voting)
+- All builds passing, pushed to GitHub + Vercel auto-deploy
+
+**Files changed:**
+- `frontend/components/Market/EquityCurve.tsx` — NEW
+- `frontend/app/api/company/[id]/trading/equity/route.ts` — NEW
+- `frontend/app/api/company/[id]/trading/positions/route.ts` — NEW
+- `frontend/app/api/company/[id]/trading/performance/route.ts` — NEW
+- `frontend/app/api/company/[id]/trading/history/route.ts` — NEW
+- `frontend/app/api/market/price/route.ts` — NEW (Binance proxy)
+- `frontend/app/api/market/ticker24h/route.ts` — NEW (Binance proxy)
+- `frontend/app/api/skills/import/route.ts` — NEW (GitHub import)
+- `frontend/app/company/page.tsx` — REWRITTEN: equity curve + roles grid
+- `frontend/app/page.tsx` — REWRITTEN: bilingual landing page
+- `frontend/app/company/watchlist/[symbol]/page.tsx` — Updated: live price ticker
+- `frontend/lib/hooks.ts` — Added: useEquityCurve, useTicker24h
+- `backend/app/api/market.py` — REWRITTEN: real Binance endpoints
+- `docs/V2_BATTLE_MODE.md` — NEW: V2 design document
+
+---
+
 ## 2026-03-12 — Session 4: V1 Product Shape + 24 Skill Cards + Symbol Detail
 
 **What happened:**
