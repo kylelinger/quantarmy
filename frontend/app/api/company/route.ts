@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 // In-memory demo store
 const DEMO_COMPANY = {
   id: 'demo-001',
-  name: 'QuantArmy Demo',
+  name: '量化军团',
   initial_capital: 100000,
   current_equity: 102450,
   market: 'crypto',

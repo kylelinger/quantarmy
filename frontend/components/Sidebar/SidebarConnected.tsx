@@ -23,12 +23,23 @@ export function SidebarConnected() {
       <div className="p-5 border-b border-dark-800">
         <Link href="/company" className="block">
           <h2 className="text-lg font-bold text-dark-100 truncate">{company?.name ?? '量化军团'}</h2>
-          <p className="text-xs text-dark-500 mt-1">QuantArmy</p>
+          <p className="text-xs text-dark-500 mt-1">QuantArmy v1.0</p>
         </Link>
       </div>
 
-      {/* Watchlist — top priority */}
-      <div className="p-3 pb-0">
+      {/* Dashboard — top priority */}
+      <div className="p-3 pb-0 space-y-1">
+        <Link
+          href="/company"
+          className={cn(
+            'flex items-center gap-2 px-3 py-3 text-sm font-semibold rounded-lg transition-colors',
+            pathname === '/company'
+              ? 'bg-army-900/30 text-army-400 border border-army-800/50'
+              : 'text-dark-200 hover:text-army-400 hover:bg-dark-850 border border-transparent'
+          )}
+        >
+          📊 仪表盘
+        </Link>
         <Link
           href="/company/watchlist"
           className={cn(
@@ -88,12 +99,6 @@ export function SidebarConnected() {
 
       {/* Bottom Actions */}
       <div className="p-3 border-t border-dark-800 space-y-1">
-        <Link
-          href="/company"
-          className="flex items-center gap-2 px-3 py-2 text-sm text-dark-400 hover:text-dark-200 transition-colors rounded-lg hover:bg-dark-850"
-        >
-          📊 仪表盘
-        </Link>
         <Link
           href="/company/settings"
           className="flex items-center gap-2 px-3 py-2 text-sm text-dark-400 hover:text-dark-200 transition-colors rounded-lg hover:bg-dark-850"
