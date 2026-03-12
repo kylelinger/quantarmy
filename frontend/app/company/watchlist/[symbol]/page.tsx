@@ -2,18 +2,25 @@
 
 import Link from 'next/link'
 import { use, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useCompanyContext } from '@/lib/CompanyContext'
 import { useWatchlist, useTicker24h, addToWatchlist, removeFromWatchlist } from '@/lib/hooks'
 import { ROLES } from '@/lib/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { TradingViewChart } from '@/components/Market/TradingViewChart'
+import { openPosition } from '@/lib/paper-trading'
 
 export default function SymbolDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = use(params)
   const decodedSymbol = decodeURIComponent(symbol).toUpperCase()
   const { companyId } = useCompanyContext()
   const { items, loading, refresh } = useWatchlist(companyId)
+  const router = useRouter()
   const [toggling, setToggling] = useState(false)
+  const [showQuickOrder, setShowQuickOrder] = useState(false)
+  const [orderNotional, setOrderNotional] = useState('')
+  const [orderSide, setOrderSide] = useState<'long' | 'short'>('long')
+  const [orderMsg, setOrderMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const item = items.find((x: any) => x.symbol === decodedSymbol)
   const isWatchlisted = !!item
@@ -100,6 +107,86 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
           )}
         </div>
       </div>
+
+      {/* Quick Order Bar */}
+      {ticker && (
+        <div className="bg-dark-900 rounded-xl border border-dark-800 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-dark-400 text-sm">当前价: <span className="text-dark-100 font-bold">{formatCurrency(ticker.price)}</span></span>
+              <span className={cn('text-sm font-medium', ticker.change_pct_24h >= 0 ? 'text-army-400' : 'text-red-400')}>
+                {ticker.change_pct_24h >= 0 ? '+' : ''}{ticker.change_pct_24h.toFixed(2)}% 24h
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {!showQuickOrder ? (
+                <button
+                  onClick={() => setShowQuickOrder(true)}
+                  className="px-4 py-2 bg-army-600 hover:bg-army-500 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  📝 一键下单
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setOrderSide('long')}
+                      className={cn('px-3 py-1.5 text-xs rounded-lg border transition-colors', orderSide === 'long' ? 'bg-army-900/40 border-army-700 text-army-400' : 'border-dark-700 text-dark-400')}
+                    >做多</button>
+                    <button
+                      onClick={() => setOrderSide('short')}
+                      className={cn('px-3 py-1.5 text-xs rounded-lg border transition-colors', orderSide === 'short' ? 'bg-red-900/40 border-red-700 text-red-400' : 'border-dark-700 text-dark-400')}
+                    >做空</button>
+                  </div>
+                  {[1000, 5000, 10000].map(amt => (
+                    <button
+                      key={amt}
+                      onClick={() => setOrderNotional(String(amt))}
+                      className={cn('px-2.5 py-1.5 text-xs rounded-lg border transition-colors', orderNotional === String(amt) ? 'border-army-600 text-army-400' : 'border-dark-700 text-dark-400 hover:border-dark-600')}
+                    >${amt.toLocaleString()}</button>
+                  ))}
+                  <input
+                    type="number"
+                    value={orderNotional}
+                    onChange={(e) => setOrderNotional(e.target.value)}
+                    placeholder="金额"
+                    className="w-24 bg-dark-800 text-dark-200 rounded-lg px-3 py-1.5 text-xs border border-dark-700 focus:border-army-600 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!orderNotional || !ticker) return
+                      try {
+                        openPosition({
+                          symbol: decodedSymbol,
+                          side: orderSide,
+                          notional: parseFloat(orderNotional),
+                          price: ticker.price,
+                          strategy: 'team-signal',
+                          reason: `从${decodedSymbol}详情页下单 | ${orderSide === 'long' ? '做多' : '做空'} @ ${formatCurrency(ticker.price)}`,
+                        })
+                        setOrderMsg({ type: 'success', text: `✅ ${orderSide === 'long' ? '做多' : '做空'} ${decodedSymbol} $${orderNotional} @ ${formatCurrency(ticker.price)}` })
+                        setOrderNotional('')
+                        setTimeout(() => setOrderMsg(null), 3000)
+                      } catch (e: any) {
+                        setOrderMsg({ type: 'error', text: e.message })
+                        setTimeout(() => setOrderMsg(null), 3000)
+                      }
+                    }}
+                    disabled={!orderNotional}
+                    className="px-4 py-1.5 bg-army-600 hover:bg-army-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-40"
+                  >
+                    确认
+                  </button>
+                  <button onClick={() => { setShowQuickOrder(false); setOrderNotional('') }} className="text-dark-500 hover:text-dark-300 text-sm px-1">✕</button>
+                </div>
+              )}
+            </div>
+          </div>
+          {orderMsg && (
+            <p className={cn('text-xs mt-2', orderMsg.type === 'success' ? 'text-army-400' : 'text-red-400')}>{orderMsg.text}</p>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 xl:col-span-8">

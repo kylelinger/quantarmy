@@ -88,22 +88,9 @@ function generateId(): string {
 }
 
 function generateInitialEquityCurve(capital: number): EquityPoint[] {
-  const points: EquityPoint[] = []
-  let equity = capital
-  const now = Date.now()
-  const dayMs = 86400_000
-
-  for (let i = 30; i >= 0; i--) {
-    const date = new Date(now - i * dayMs)
-    const dateStr = date.toISOString().slice(0, 10)
-    if (i > 0) {
-      const dailyReturn = (Math.random() - 0.47) * 0.008
-      equity = equity * (1 + dailyReturn)
-    }
-    points.push({ time: dateStr, value: Math.round(equity * 100) / 100 })
-  }
-
-  return points
+  // New account = flat line at initial capital (no fake random data)
+  const today = new Date().toISOString().slice(0, 10)
+  return [{ time: today, value: capital }]
 }
 
 // --- Public API ---
