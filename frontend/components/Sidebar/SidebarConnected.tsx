@@ -4,32 +4,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useCompanyContext } from '@/lib/CompanyContext'
-import { ROLES, type RoleType } from '@/lib/types'
-import { startTrading, stopTrading } from '@/lib/hooks'
-
+import { ROLES } from '@/lib/types'
 export function SidebarConnected() {
   const pathname = usePathname()
-  const { company, roles, companyId, refresh } = useCompanyContext()
+  const { company, roles, companyId } = useCompanyContext()
 
   const roleStatusMap: Record<string, { status: string; skillName: string | null }> = {}
   for (const role of roles) {
     roleStatusMap[role.role_type] = {
       status: role.status,
       skillName: role.active_skill_id ? `Skill #${role.active_skill_id.slice(0, 6)}` : null,
-    }
-  }
-
-  const handleToggle = async () => {
-    if (!companyId) return
-    try {
-      if (company?.status === 'active') {
-        await stopTrading(companyId)
-      } else {
-        await startTrading(companyId)
-      }
-      await refresh()
-    } catch (e) {
-      console.error('Toggle trading error:', e)
     }
   }
 
@@ -104,19 +88,6 @@ export function SidebarConnected() {
 
       {/* Bottom Actions */}
       <div className="p-3 border-t border-dark-800 space-y-1">
-        {companyId && (
-          <button
-            onClick={handleToggle}
-            className={cn(
-              'w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors',
-              company?.status === 'active'
-                ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
-                : 'bg-army-900/30 text-army-400 hover:bg-army-900/50'
-            )}
-          >
-            {company?.status === 'active' ? '⏸ 停止交易' : '▶️ 开始交易'}
-          </button>
-        )}
         <Link
           href="/company"
           className="flex items-center gap-2 px-3 py-2 text-sm text-dark-400 hover:text-dark-200 transition-colors rounded-lg hover:bg-dark-850"

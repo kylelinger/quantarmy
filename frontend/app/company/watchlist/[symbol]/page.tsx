@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { use } from 'react'
+import { use, useState } from 'react'
 import { useCompanyContext } from '@/lib/CompanyContext'
-import { useWatchlist, useTicker24h } from '@/lib/hooks'
+import { useWatchlist, useTicker24h, addToWatchlist, removeFromWatchlist } from '@/lib/hooks'
 import { ROLES } from '@/lib/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { TradingViewChart } from '@/components/Market/TradingViewChart'
@@ -12,26 +12,32 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
   const { symbol } = use(params)
   const decodedSymbol = decodeURIComponent(symbol).toUpperCase()
   const { companyId } = useCompanyContext()
-  const { items, loading } = useWatchlist(companyId)
+  const { items, loading, refresh } = useWatchlist(companyId)
+  const [toggling, setToggling] = useState(false)
 
   const item = items.find((x: any) => x.symbol === decodedSymbol)
+  const isWatchlisted = !!item
   const analysis = item?.last_analysis || {}
   const isCrypto = decodedSymbol.endsWith('USDT')
   const { ticker } = useTicker24h(isCrypto ? decodedSymbol : null)
 
-  if (loading) {
-    return <div className="py-16 text-center text-dark-500">加载标的详情中...</div>
+  const toggleWatchlist = async () => {
+    if (!companyId || toggling) return
+    setToggling(true)
+    try {
+      if (isWatchlisted) {
+        await removeFromWatchlist(companyId, item.id)
+      } else {
+        await addToWatchlist(companyId, decodedSymbol, decodedSymbol, isCrypto ? 'crypto' : 'stock')
+      }
+      await refresh()
+    } finally {
+      setToggling(false)
+    }
   }
 
-  if (!item) {
-    return (
-      <div className="space-y-4">
-        <Link href="/company/watchlist" className="text-army-400 hover:text-army-300 text-sm">← 返回自选标的</Link>
-        <div className="bg-dark-900 rounded-xl border border-dark-800 p-12 text-center">
-          <p className="text-dark-300 text-lg">未找到标的：{decodedSymbol}</p>
-        </div>
-      </div>
-    )
+  if (loading) {
+    return <div className="py-16 text-center text-dark-500">加载标的详情中...</div>
   }
 
   const roleOrder = ['collector', 'researcher', 'strategist', 'analyst', 'risk_officer', 'executor', 'cto', 'ceo']
@@ -42,19 +48,36 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
         <div>
           <Link href="/company/watchlist" className="text-army-400 hover:text-army-300 text-sm">← 返回自选标的</Link>
           <div className="mt-2 flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-dark-100">{item.symbol}</h1>
-            <span className="text-dark-500">{item.display_name}</span>
-            <span className={cn(
-              'px-2.5 py-1 rounded-full text-xs border',
-              item.priority === 2 ? 'bg-red-900/20 border-red-900/40 text-red-400' :
-              item.priority === 1 ? 'bg-yellow-900/20 border-yellow-900/40 text-yellow-400' :
-              'bg-dark-800 border-dark-700 text-dark-400'
-            )}>
-              {item.priority === 2 ? '🔥 核心跟踪' : item.priority === 1 ? '⭐ 重点跟踪' : '普通跟踪'}
-            </span>
+            <h1 className="text-3xl font-bold text-dark-100">{decodedSymbol}</h1>
+            <button
+              onClick={toggleWatchlist}
+              disabled={toggling}
+              className={cn(
+                'p-1.5 rounded-lg transition-all',
+                isWatchlisted
+                  ? 'text-yellow-400 hover:text-yellow-500'
+                  : 'text-dark-600 hover:text-yellow-400'
+              )}
+              title={isWatchlisted ? '取消自选' : '添加自选'}
+            >
+              <svg className="w-6 h-6" fill={isWatchlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={isWatchlisted ? 0 : 1.5} viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            </button>
+            {item && <span className="text-dark-500">{item.display_name}</span>}
+            {item && (
+              <span className={cn(
+                'px-2.5 py-1 rounded-full text-xs border',
+                item.priority === 2 ? 'bg-red-900/20 border-red-900/40 text-red-400' :
+                item.priority === 1 ? 'bg-yellow-900/20 border-yellow-900/40 text-yellow-400' :
+                'bg-dark-800 border-dark-700 text-dark-400'
+              )}>
+                {item.priority === 2 ? '🔥 核心跟踪' : item.priority === 1 ? '⭐ 重点跟踪' : '普通跟踪'}
+              </span>
+            )}
           </div>
           <p className="text-dark-400 mt-2 max-w-3xl">
-            V1 单标的作战页：8 个角色独立输出，CEO 汇总不覆盖。
+            {isWatchlisted ? 'V1 单标的作战页：8 个角色独立输出，CEO 汇总不覆盖。' : '点击星星添加到自选列表，获取团队分析。'}
           </p>
         </div>
         <div className="text-right">
@@ -87,7 +110,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
                 <p className="text-dark-500 text-sm">可直接用于实战盯盘，不需要付费 API key</p>
               </div>
               <a
-                href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(item.symbol.endsWith('USDT') ? `BINANCE:${item.symbol}` : `NASDAQ:${item.symbol}`)}`}
+                href={`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(decodedSymbol.endsWith('USDT') ? `BINANCE:${decodedSymbol}` : `NASDAQ:${decodedSymbol}`)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-sm text-army-400 hover:text-army-300"
@@ -96,36 +119,53 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
               </a>
             </div>
             <div className="h-[560px]">
-              <TradingViewChart symbol={item.symbol} interval="60" />
+              <TradingViewChart symbol={decodedSymbol} interval="60" />
             </div>
           </div>
         </div>
 
         <div className="col-span-12 xl:col-span-4 space-y-4">
-          <div className="bg-dark-900 rounded-xl border border-dark-800 p-5">
-            <h3 className="text-lg font-semibold text-dark-100 mb-3">CEO 摘要</h3>
-            <div className="space-y-3 text-sm">
-              <SummaryRow label="团队状态" value={analysis.ceo?.verdict || '等待 CEO 汇总'} />
-              <SummaryRow label="主要分歧" value={analysis.ceo?.debate || '当前分歧主要集中在追高风险与持续性'} />
-              <SummaryRow label="失效条件" value={analysis.ceo?.invalidation || '跌破关键支撑 / 数据质量异常 / 情绪反转'} />
-            </div>
-          </div>
-
-          <div className="bg-dark-900 rounded-xl border border-dark-800 p-5">
-            <h3 className="text-lg font-semibold text-dark-100 mb-3">用户备注</h3>
-            <p className="text-dark-400 text-sm">{item.notes || '暂无备注'}</p>
-            {item.tags?.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {item.tags.map((tag: string) => (
-                  <span key={tag} className="px-2 py-1 rounded bg-dark-800 text-dark-400 text-xs">{tag}</span>
-                ))}
+          {isWatchlisted ? (
+            <>
+              <div className="bg-dark-900 rounded-xl border border-dark-800 p-5">
+                <h3 className="text-lg font-semibold text-dark-100 mb-3">CEO 摘要</h3>
+                <div className="space-y-3 text-sm">
+                  <SummaryRow label="团队状态" value={analysis.ceo?.verdict || '等待 CEO 汇总'} />
+                  <SummaryRow label="主要分歧" value={analysis.ceo?.debate || '当前分歧主要集中在追高风险与持续性'} />
+                  <SummaryRow label="失效条件" value={analysis.ceo?.invalidation || '跌破关键支撑 / 数据质量异常 / 情绪反转'} />
+                </div>
               </div>
-            )}
-          </div>
+
+              <div className="bg-dark-900 rounded-xl border border-dark-800 p-5">
+                <h3 className="text-lg font-semibold text-dark-100 mb-3">用户备注</h3>
+                <p className="text-dark-400 text-sm">{item.notes || '暂无备注'}</p>
+                {item.tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {item.tags.map((tag: string) => (
+                      <span key={tag} className="px-2 py-1 rounded bg-dark-800 text-dark-400 text-xs">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="bg-dark-900 rounded-xl border border-dark-800 p-8 text-center">
+              <p className="text-4xl mb-3">⭐</p>
+              <p className="text-dark-200 font-medium mb-2">添加到自选</p>
+              <p className="text-dark-500 text-sm mb-4">点击标题旁的星星，将 {decodedSymbol} 加入自选列表</p>
+              <button
+                onClick={toggleWatchlist}
+                disabled={toggling}
+                className="px-6 py-2.5 bg-army-600 hover:bg-army-500 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
+              >
+                ⭐ 添加到自选
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="space-y-3">
+      {isWatchlisted && <div className="space-y-3">
         <div>
           <h2 className="text-xl font-semibold text-dark-100">8 个独立角色输出</h2>
           <p className="text-dark-500 text-sm mt-1">V1 不强行统一口径，先保留不同视角，后续 V2 再引入 battle 机制。</p>
@@ -168,7 +208,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
             )
           })}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

@@ -297,15 +297,14 @@ export default function WatchlistPage() {
                           <span className="text-dark-400 text-sm">{item.name}</span>
                         </div>
                       </div>
-                      {added ? (
-                        <span className="text-xs text-dark-500 flex items-center gap-1">
-                          ✓ 已添加 <span className="text-army-500">→ 查看</span>
+                      <span className="flex items-center gap-2">
+                        <svg className={cn('w-4 h-4', added ? 'text-yellow-400' : 'text-dark-600')} fill={added ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span className={cn('text-xs', added ? 'text-dark-500' : 'text-army-400')}>
+                          {added ? '已自选 → 查看' : '添加自选'}
                         </span>
-                      ) : (
-                        <span className="text-xs text-army-400 px-2 py-1 bg-army-900/30 rounded">
-                          + 添加并查看
-                        </span>
-                      )}
+                      </span>
                     </button>
                   )
                 })
@@ -480,17 +479,13 @@ function WatchlistCard({
             {analyzing ? '🔄' : '🔍'} 分析
           </button>
           <button
-            onClick={(e) => { e.preventDefault(); onToggle() }}
-            className="px-2 py-1.5 text-xs text-dark-500 hover:text-dark-300 transition-colors"
-            title="展开详情"
-          >
-            <span className={cn('inline-block transition-transform', expanded && 'rotate-180')}>▾</span>
-          </button>
-          <button
             onClick={(e) => { e.preventDefault(); onRemove() }}
-            className="px-2 py-1.5 text-xs text-dark-500 hover:text-red-400 transition-colors"
+            className="p-2 text-yellow-400 hover:text-yellow-500 transition-colors"
+            title="取消自选"
           >
-            ✕
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
           </button>
         </div>
       </Link>
