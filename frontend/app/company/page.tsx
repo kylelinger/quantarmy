@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useCompanyContext } from '@/lib/CompanyContext'
-import { usePositions, usePerformance, useTradeHistory, useRoles } from '@/lib/hooks'
+import { usePositions, usePerformance, useTradeHistory, useRoles, useEquityCurve } from '@/lib/hooks'
+import { EquityCurve } from '@/components/Market/EquityCurve'
 import { formatCurrency, formatPercent, pnlColor, cn, timeAgo } from '@/lib/utils'
 import { ROLES } from '@/lib/types'
 
@@ -12,6 +13,7 @@ export default function CompanyOverviewPage() {
   const { perf } = usePerformance(companyId)
   const { trades } = useTradeHistory(companyId, 10)
   const { roles } = useRoles(companyId)
+  const { data: equityData } = useEquityCurve(companyId)
 
   const equity = company?.current_equity ?? 100000
   const initial = company?.initial_capital ?? 100000
@@ -43,6 +45,12 @@ export default function CompanyOverviewPage() {
           <SmallStat label="总回报" value={formatPercent(perf.total_return)} positive={perf.total_return > 0} />
         </div>
       )}
+
+      {/* Equity Curve */}
+      <div className="bg-dark-900 rounded-xl border border-dark-800 p-6">
+        <h3 className="text-lg font-semibold text-dark-200 mb-4">权益曲线</h3>
+        <EquityCurve data={equityData} initialCapital={initial} height={280} />
+      </div>
 
       {/* 8 Role Status Grid */}
       <div>

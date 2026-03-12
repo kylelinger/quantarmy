@@ -274,6 +274,30 @@ export function usePerformance(companyId: string | null) {
   return { perf, refresh }
 }
 
+// --- Equity curve ---
+
+export function useEquityCurve(companyId: string | null) {
+  const [data, setData] = useState<{ time: string; value: number }[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!companyId) return
+    let cancelled = false
+    async function fetch_() {
+      try {
+        const d = await apiFetch<{ time: string; value: number }[]>(`/company/${companyId}/trading/equity`)
+        if (!cancelled) setData(d)
+      } catch { /* ignore */ } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    fetch_()
+    return () => { cancelled = true }
+  }, [companyId])
+
+  return { data, loading }
+}
+
 // --- Real-time ticker ---
 
 interface Ticker24h {
