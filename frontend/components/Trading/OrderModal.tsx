@@ -61,8 +61,6 @@ export function OrderModal({
               {watchlistItems.map((item: any) => (
                 <option key={item.symbol} value={item.symbol}>{item.symbol} — {item.display_name}</option>
               ))}
-              <option value="BTCUSDT">BTCUSDT</option>
-              <option value="ETHUSDT">ETHUSDT</option>
             </select>
           </div>
 
