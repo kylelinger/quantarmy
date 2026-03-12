@@ -1,4 +1,5 @@
 import type { AnalysisInput, CollectorOutput } from './types'
+import type { DepthLevel, RecentTrade } from '../market-adapter'
 
 export function analyzeCollector(input: AnalysisInput): CollectorOutput {
   const { symbol, quote, depth, recentTrades } = input
@@ -9,8 +10,8 @@ export function analyzeCollector(input: AnalysisInput): CollectorOutput {
   // Bid/ask ratio from depth
   let bidAskRatio: number | null = null
   if (depth && depth.bids.length > 0 && depth.asks.length > 0) {
-    const totalBid = depth.bids.reduce((s, b) => s + b.qty * b.price, 0)
-    const totalAsk = depth.asks.reduce((s, a) => s + a.qty * a.price, 0)
+    const totalBid = depth.bids.reduce((s: number, b: DepthLevel) => s + b.qty * b.price, 0)
+    const totalAsk = depth.asks.reduce((s: number, a: DepthLevel) => s + a.qty * a.price, 0)
     bidAskRatio = totalAsk > 0 ? totalBid / totalAsk : 1
   }
 
@@ -20,14 +21,14 @@ export function analyzeCollector(input: AnalysisInput): CollectorOutput {
   let netFlow: number | null = null
 
   if (recentTrades.length > 0) {
-    const avgQty = recentTrades.reduce((s, t) => s + t.quoteQty, 0) / recentTrades.length
-    const buyTrades = recentTrades.filter(t => !t.isBuyerMaker)
-    const sellTrades = recentTrades.filter(t => t.isBuyerMaker)
+    const avgQty = recentTrades.reduce((s: number, t: RecentTrade) => s + t.quoteQty, 0) / recentTrades.length
+    const buyTrades = recentTrades.filter((t: RecentTrade) => !t.isBuyerMaker)
+    const sellTrades = recentTrades.filter((t: RecentTrade) => t.isBuyerMaker)
 
     buyVolPct = buyTrades.length / recentTrades.length * 100
-    largeTrades = recentTrades.filter(t => t.quoteQty > avgQty * 3).length
-    const buyVol = buyTrades.reduce((s, t) => s + t.quoteQty, 0)
-    const sellVol = sellTrades.reduce((s, t) => s + t.quoteQty, 0)
+    largeTrades = recentTrades.filter((t: RecentTrade) => t.quoteQty > avgQty * 3).length
+    const buyVol = buyTrades.reduce((s: number, t: RecentTrade) => s + t.quoteQty, 0)
+    const sellVol = sellTrades.reduce((s: number, t: RecentTrade) => s + t.quoteQty, 0)
     netFlow = buyVol - sellVol
   }
 

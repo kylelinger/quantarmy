@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useId } from 'react'
 
-const NASDAQ_STOCKS = new Set(['AAPL','MSFT','NVDA','META','AMD','AMZN','GOOGL','TSLA','NFLX','AVGO','CRM','ORCL','INTC','PLTR','COIN','MSTR','ARM','SMCI','SNOW','SHOP','BIDU','JD','PDD','BABA','NIO','LI','XPEV','SQ'])
-
 function toTradingViewSymbol(symbol: string) {
   const upper = symbol.toUpperCase()
   // Crypto
@@ -14,9 +12,7 @@ function toTradingViewSymbol(symbol: string) {
   if (upper.endsWith('.SS')) return `SSE:${upper.replace('.SS', '')}`
   // A-shares Shenzhen
   if (upper.endsWith('.SZ')) return `SZSE:${upper.replace('.SZ', '')}`
-  // US stocks
-  if (NASDAQ_STOCKS.has(upper)) return `NASDAQ:${upper}`
-  return `NYSE:${upper}`
+  return upper
 }
 
 export function TradingViewChart({ symbol, interval = '60', height = 560 }: { symbol: string; interval?: string; height?: number }) {

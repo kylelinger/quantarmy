@@ -50,43 +50,6 @@ const ALL_CRYPTO = [
   { symbol: 'STXUSDT', name: 'Stacks', aliases: ['STX'] },
 ]
 
-const ALL_US_STOCKS = [
-  { symbol: 'AAPL', name: 'Apple', aliases: ['苹果'] },
-  { symbol: 'MSFT', name: 'Microsoft', aliases: ['微软'] },
-  { symbol: 'GOOGL', name: 'Google / Alphabet', aliases: ['谷歌', 'GOOG'] },
-  { symbol: 'AMZN', name: 'Amazon', aliases: ['亚马逊'] },
-  { symbol: 'NVDA', name: 'NVIDIA', aliases: ['英伟达'] },
-  { symbol: 'TSLA', name: 'Tesla', aliases: ['特斯拉'] },
-  { symbol: 'META', name: 'Meta Platforms', aliases: ['Facebook', 'FB', '脸书'] },
-  { symbol: 'AMD', name: 'AMD', aliases: ['超威半导体'] },
-  { symbol: 'NFLX', name: 'Netflix', aliases: ['奈飞'] },
-  { symbol: 'AVGO', name: 'Broadcom', aliases: ['博通'] },
-  { symbol: 'CRM', name: 'Salesforce', aliases: [] },
-  { symbol: 'ORCL', name: 'Oracle', aliases: ['甲骨文'] },
-  { symbol: 'INTC', name: 'Intel', aliases: ['英特尔'] },
-  { symbol: 'PLTR', name: 'Palantir', aliases: [] },
-  { symbol: 'COIN', name: 'Coinbase', aliases: [] },
-  { symbol: 'MSTR', name: 'MicroStrategy', aliases: [] },
-  { symbol: 'ARM', name: 'ARM Holdings', aliases: [] },
-  { symbol: 'SMCI', name: 'Super Micro Computer', aliases: [] },
-  { symbol: 'SNOW', name: 'Snowflake', aliases: [] },
-  { symbol: 'SQ', name: 'Block (Square)', aliases: [] },
-  { symbol: 'SHOP', name: 'Shopify', aliases: [] },
-  { symbol: 'JPM', name: 'JPMorgan Chase', aliases: ['摩根大通'] },
-  { symbol: 'V', name: 'Visa', aliases: [] },
-  { symbol: 'MA', name: 'Mastercard', aliases: ['万事达'] },
-  { symbol: 'BAC', name: 'Bank of America', aliases: ['美国银行'] },
-  { symbol: 'WMT', name: 'Walmart', aliases: ['沃尔玛'] },
-  { symbol: 'DIS', name: 'Walt Disney', aliases: ['迪士尼'] },
-  { symbol: 'BABA', name: 'Alibaba (US ADR)', aliases: ['阿里巴巴'] },
-  { symbol: 'PDD', name: 'PDD Holdings', aliases: ['拼多多'] },
-  { symbol: 'JD', name: 'JD.com', aliases: ['京东'] },
-  { symbol: 'BIDU', name: 'Baidu', aliases: ['百度'] },
-  { symbol: 'NIO', name: 'NIO', aliases: ['蔚来'] },
-  { symbol: 'LI', name: 'Li Auto', aliases: ['理想汽车'] },
-  { symbol: 'XPEV', name: 'XPeng', aliases: ['小鹏汽车'] },
-]
-
 const ALL_HK_STOCKS = [
   { symbol: '0700.HK', name: 'Tencent', aliases: ['腾讯', '腾讯控股'] },
   { symbol: '9988.HK', name: 'Alibaba', aliases: ['阿里巴巴', '阿里'] },
@@ -153,12 +116,8 @@ const ALL_A_SHARES = [
   { symbol: '002049.SZ', name: 'Unigroup Guoxin', aliases: ['紫光国微'] },
 ]
 
-// Combined for backward compat
-const ALL_STOCKS = ALL_US_STOCKS
-
 // Popular picks per market
 const CRYPTO_POPULAR = ALL_CRYPTO.slice(0, 5)
-const US_POPULAR = ALL_US_STOCKS.slice(0, 5)
 const HK_POPULAR = ALL_HK_STOCKS.slice(0, 5)
 const A_POPULAR = ALL_A_SHARES.slice(0, 5)
 
@@ -175,7 +134,7 @@ export default function WatchlistPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [highlightIdx, setHighlightIdx] = useState(-1)
-  const [selectedMarket, setSelectedMarket] = useState<'crypto' | 'us_stock' | 'hk_stock' | 'a_share'>('crypto')
+  const [selectedMarket, setSelectedMarket] = useState<'crypto' | 'hk_stock' | 'a_share'>('crypto')
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
@@ -184,16 +143,13 @@ export default function WatchlistPage() {
   const existingSymbols = new Set(items.map((i: any) => i.symbol))
   const allSymbols = selectedMarket === 'crypto' ? ALL_CRYPTO
     : selectedMarket === 'hk_stock' ? ALL_HK_STOCKS
-    : selectedMarket === 'a_share' ? ALL_A_SHARES
-    : ALL_US_STOCKS
+    : ALL_A_SHARES
   const suggestions = selectedMarket === 'crypto' ? CRYPTO_POPULAR
     : selectedMarket === 'hk_stock' ? HK_POPULAR
-    : selectedMarket === 'a_share' ? A_POPULAR
-    : US_POPULAR
+    : A_POPULAR
   const marketLabel = selectedMarket === 'crypto' ? '加密货币'
     : selectedMarket === 'hk_stock' ? '港股'
-    : selectedMarket === 'a_share' ? 'A股'
-    : '美股'
+    : 'A股'
 
   // Filter search results
   const searchResults = searchQuery.trim().length > 0
@@ -318,7 +274,6 @@ export default function WatchlistPage() {
           <div className="flex gap-1 bg-dark-850 rounded-lg p-1">
             {([
               { key: 'crypto' as const, label: '₿ 加密货币' },
-              { key: 'us_stock' as const, label: '🇺🇸 美股' },
               { key: 'hk_stock' as const, label: '🇭🇰 港股' },
               { key: 'a_share' as const, label: '🇨🇳 A股' },
             ]).map(tab => (
