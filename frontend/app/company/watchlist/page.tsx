@@ -242,10 +242,10 @@ function WatchlistCard({
 
   return (
     <div className="bg-dark-900 rounded-xl border border-dark-800 overflow-hidden">
-      {/* Main row */}
-      <div
-        className="flex items-center gap-4 p-5 cursor-pointer hover:bg-dark-850 transition-colors"
-        onClick={onToggle}
+      {/* Main row — clicking navigates to detail page */}
+      <Link
+        href={`/company/watchlist/${encodeURIComponent(item.symbol)}`}
+        className="flex items-center gap-4 p-5 hover:bg-dark-850 transition-colors"
       >
         {/* Priority indicator */}
         <div className="w-1 h-10 rounded-full" style={{
@@ -255,13 +255,9 @@ function WatchlistCard({
         {/* Symbol info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <Link
-              href={`/company/watchlist/${encodeURIComponent(item.symbol)}`}
-              className="text-lg font-bold text-dark-100 hover:text-army-400 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <span className="text-lg font-bold text-dark-100 group-hover:text-army-400 transition-colors">
               {item.symbol}
-            </Link>
+            </span>
             {priority.icon && <span>{priority.icon}</span>}
             <span className="text-dark-500 text-sm">{item.display_name}</span>
           </div>
@@ -296,26 +292,30 @@ function WatchlistCard({
           })}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        {/* Actions — stop propagation to prevent navigation */}
+        <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
           <button
-            onClick={onAnalyze}
+            onClick={(e) => { e.preventDefault(); onAnalyze() }}
             disabled={analyzing}
             className="px-3 py-1.5 text-xs bg-army-900/30 text-army-400 hover:bg-army-900/50 rounded-lg transition-colors disabled:opacity-50"
           >
             {analyzing ? '🔄' : '🔍'} 分析
           </button>
           <button
-            onClick={onRemove}
+            onClick={(e) => { e.preventDefault(); onToggle() }}
+            className="px-2 py-1.5 text-xs text-dark-500 hover:text-dark-300 transition-colors"
+            title="展开详情"
+          >
+            <span className={cn('inline-block transition-transform', expanded && 'rotate-180')}>▾</span>
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); onRemove() }}
             className="px-2 py-1.5 text-xs text-dark-500 hover:text-red-400 transition-colors"
           >
             ✕
           </button>
         </div>
-
-        {/* Expand arrow */}
-        <span className={cn('text-dark-500 transition-transform', expanded && 'rotate-180')}>▾</span>
-      </div>
+      </Link>
 
       {/* Expanded analysis panel */}
       {expanded && (
