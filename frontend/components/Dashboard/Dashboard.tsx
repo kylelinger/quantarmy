@@ -21,7 +21,7 @@ export function Dashboard({ company, positions = [] }: DashboardProps) {
         <h1 className="text-3xl font-bold text-dark-100">
           {company?.name ?? '我的量化公司'}
         </h1>
-        <p className="text-dark-500 mt-1">公司概览</p>
+        <p className="text-dark-500 mt-1">仪表盘</p>
       </div>
 
       {/* Key Metrics */}

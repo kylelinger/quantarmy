@@ -76,7 +76,7 @@ export function Sidebar({ companyName = '我的量化公司', activeRoles }: Sid
           href="/company"
           className="flex items-center gap-2 px-3 py-2 text-sm text-dark-400 hover:text-dark-200 transition-colors rounded-lg hover:bg-dark-850"
         >
-          📊 公司概览
+          📊 仪表盘
         </Link>
         <Link
           href="/company/settings"
