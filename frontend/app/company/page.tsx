@@ -1,14 +1,17 @@
 'use client'
 
+import Link from 'next/link'
 import { useCompanyContext } from '@/lib/CompanyContext'
-import { usePositions, usePerformance, useTradeHistory } from '@/lib/hooks'
+import { usePositions, usePerformance, useTradeHistory, useRoles } from '@/lib/hooks'
 import { formatCurrency, formatPercent, pnlColor, cn, timeAgo } from '@/lib/utils'
+import { ROLES } from '@/lib/types'
 
 export default function CompanyOverviewPage() {
   const { company, companyId } = useCompanyContext()
   const { positions } = usePositions(companyId)
   const { perf } = usePerformance(companyId)
   const { trades } = useTradeHistory(companyId, 10)
+  const { roles } = useRoles(companyId)
 
   const equity = company?.current_equity ?? 100000
   const initial = company?.initial_capital ?? 100000
@@ -20,7 +23,7 @@ export default function CompanyOverviewPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-dark-100">{company?.name ?? '我的量化公司'}</h1>
-        <p className="text-dark-500 mt-1">公司概览 · {company?.market === 'stock' ? '股票' : '加密货币'}</p>
+        <p className="text-dark-500 mt-1">公司概览 · {company?.market === 'stock' ? '股票' : '加密货币'} · V1 独立分析模式</p>
       </div>
 
       {/* Key Metrics */}
@@ -41,43 +44,77 @@ export default function CompanyOverviewPage() {
         </div>
       )}
 
+      {/* 8 Role Status Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-dark-100">团队阵容</h2>
+          <span className="text-sm text-dark-500">8 个角色独立分析，CEO 汇总</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {ROLES.map((roleMeta) => {
+            const role = roles.find((r: any) => r.role_type === roleMeta.type)
+            return (
+              <Link
+                key={roleMeta.type}
+                href={`/company/${roleMeta.type}`}
+                className="bg-dark-900 rounded-xl border border-dark-800 p-5 hover:border-dark-600 transition-colors group"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                    style={{ backgroundColor: `${roleMeta.color}20` }}
+                  >
+                    {roleMeta.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-dark-100 group-hover:text-army-400 transition-colors">{roleMeta.label}</p>
+                    <p className="text-xs text-dark-500 truncate">{roleMeta.description}</p>
+                  </div>
+                </div>
+                {role?.last_output ? (
+                  <p className="text-sm text-dark-400 line-clamp-2 leading-5">{role.last_output}</p>
+                ) : (
+                  <p className="text-sm text-dark-600">等待分析...</p>
+                )}
+                <div className="flex items-center gap-2 mt-3">
+                  <span className={cn(
+                    'w-2 h-2 rounded-full',
+                    role?.status === 'active' ? 'bg-army-500' : role?.status === 'error' ? 'bg-red-500' : 'bg-dark-600'
+                  )} />
+                  <span className="text-xs text-dark-500">
+                    {role?.status === 'active' ? '运行中' : role?.status === 'error' ? '异常' : '空闲'}
+                  </span>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Positions */}
       <div className="bg-dark-900 rounded-xl border border-dark-800 p-6">
         <h3 className="text-lg font-semibold text-dark-200 mb-4">当前持仓</h3>
         {positions.length > 0 ? (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-dark-500 text-left">
-                <th className="pb-3 font-medium">品种</th>
-                <th className="pb-3 font-medium">方向</th>
-                <th className="pb-3 font-medium text-right">数量</th>
-                <th className="pb-3 font-medium text-right">入场价</th>
-                <th className="pb-3 font-medium text-right">现价</th>
-                <th className="pb-3 font-medium text-right">盈亏</th>
-              </tr>
-            </thead>
-            <tbody>
-              {positions.map((pos) => (
-                <tr key={pos.id} className="border-t border-dark-800">
-                  <td className="py-3 text-dark-200 font-medium">{pos.symbol}</td>
-                  <td className="py-3">
-                    <span className={cn(
-                      'px-2 py-0.5 rounded text-xs font-medium',
-                      pos.side === 'long' ? 'bg-army-900/30 text-army-400' : 'bg-red-900/30 text-red-400'
-                    )}>
-                      {pos.side === 'long' ? '做多' : '做空'}
-                    </span>
-                  </td>
-                  <td className="py-3 text-dark-300 text-right">{pos.size.toFixed(6)}</td>
-                  <td className="py-3 text-dark-300 text-right">{formatCurrency(pos.entry_price)}</td>
-                  <td className="py-3 text-dark-300 text-right">{formatCurrency(pos.current_price)}</td>
-                  <td className={cn('py-3 text-right font-medium', pnlColor(pos.unrealized_pnl))}>
-                    {formatCurrency(pos.unrealized_pnl)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="space-y-3">
+            {positions.map((pos) => (
+              <div key={pos.id} className="flex items-center justify-between py-3 border-b border-dark-850 last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className={cn(
+                    'px-2 py-0.5 rounded text-xs font-medium',
+                    pos.side === 'long' ? 'bg-army-900/30 text-army-400' : 'bg-red-900/30 text-red-400'
+                  )}>
+                    {pos.side === 'long' ? '多' : '空'}
+                  </span>
+                  <Link href={`/company/watchlist/${pos.symbol}`} className="text-dark-200 font-medium hover:text-army-400">{pos.symbol}</Link>
+                  <span className="text-dark-500 text-xs">{pos.size.toFixed(6)} @ {formatCurrency(pos.entry_price)}</span>
+                </div>
+                <div className="text-right">
+                  <span className={cn('font-medium', pnlColor(pos.unrealized_pnl))}>{formatCurrency(pos.unrealized_pnl)}</span>
+                  <span className={cn('text-xs ml-2', pnlColor(pos.unrealized_pnl))}>{formatPercent(pos.pnl_pct)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <p className="text-dark-500 text-center py-8">暂无持仓</p>
         )}
@@ -89,7 +126,7 @@ export default function CompanyOverviewPage() {
         {trades.length > 0 ? (
           <div className="space-y-2">
             {trades.map((t) => (
-              <div key={t.id} className="flex items-center justify-between text-sm py-2 border-b border-dark-850">
+              <div key={t.id} className="flex items-center justify-between text-sm py-2 border-b border-dark-850 last:border-0">
                 <div className="flex items-center gap-3">
                   <span className={cn(
                     'px-2 py-0.5 rounded text-xs',
