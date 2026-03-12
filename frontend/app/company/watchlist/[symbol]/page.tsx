@@ -3,9 +3,9 @@
 import Link from 'next/link'
 import { use } from 'react'
 import { useCompanyContext } from '@/lib/CompanyContext'
-import { useWatchlist } from '@/lib/hooks'
+import { useWatchlist, useTicker24h } from '@/lib/hooks'
 import { ROLES } from '@/lib/types'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { TradingViewChart } from '@/components/Market/TradingViewChart'
 
 export default function SymbolDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
@@ -16,6 +16,8 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
 
   const item = items.find((x: any) => x.symbol === decodedSymbol)
   const analysis = item?.last_analysis || {}
+  const isCrypto = decodedSymbol.endsWith('USDT')
+  const { ticker } = useTicker24h(isCrypto ? decodedSymbol : null)
 
   if (loading) {
     return <div className="py-16 text-center text-dark-500">加载标的详情中...</div>
@@ -52,12 +54,27 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
             </span>
           </div>
           <p className="text-dark-400 mt-2 max-w-3xl">
-            这是当前 V1 的单标的作战页：用户自己选标的，8 个角色各自独立输出分析，CEO 负责摘要而不是覆盖其他角色。
+            V1 单标的作战页：8 个角色独立输出，CEO 汇总不覆盖。
           </p>
         </div>
-        <div className="text-right text-sm text-dark-500">
-          <p>免费实时图表</p>
-          <p className="text-dark-400">TradingView Embedded Widget</p>
+        <div className="text-right">
+          {ticker ? (
+            <div>
+              <p className="text-2xl font-bold text-dark-100">{formatCurrency(ticker.price)}</p>
+              <p className={cn('text-sm font-medium', ticker.change_pct_24h >= 0 ? 'text-army-400' : 'text-red-400')}>
+                {ticker.change_pct_24h >= 0 ? '+' : ''}{ticker.change_pct_24h.toFixed(2)}%
+                <span className="text-dark-500 ml-1">24h</span>
+              </p>
+              <p className="text-xs text-dark-500 mt-1">
+                H {formatCurrency(ticker.high_24h)} · L {formatCurrency(ticker.low_24h)}
+              </p>
+            </div>
+          ) : (
+            <div className="text-sm text-dark-500">
+              <p>免费实时图表</p>
+              <p className="text-dark-400">TradingView Widget</p>
+            </div>
+          )}
         </div>
       </div>
 

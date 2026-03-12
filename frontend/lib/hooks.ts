@@ -273,3 +273,45 @@ export function usePerformance(companyId: string | null) {
   useEffect(() => { refresh() }, [refresh])
   return { perf, refresh }
 }
+
+// --- Real-time ticker ---
+
+interface Ticker24h {
+  symbol: string
+  price: number
+  change_24h: number
+  change_pct_24h: number
+  high_24h: number
+  low_24h: number
+  volume_24h: number
+  quote_volume_24h: number
+  source: string
+}
+
+export function useTicker24h(symbol: string | null, refreshIntervalMs = 15000) {
+  const [ticker, setTicker] = useState<Ticker24h | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!symbol) return
+    let cancelled = false
+
+    async function fetchTicker() {
+      try {
+        const res = await fetch(`/api/market/ticker24h?symbol=${encodeURIComponent(symbol!)}`)
+        const json = await res.json()
+        if (!cancelled && json.ok) {
+          setTicker(json.data)
+        }
+      } catch { /* ignore */ } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    fetchTicker()
+    const interval = setInterval(fetchTicker, refreshIntervalMs)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [symbol, refreshIntervalMs])
+
+  return { ticker, loading }
+}
