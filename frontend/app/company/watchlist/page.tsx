@@ -438,9 +438,6 @@ function WatchlistCard({
             </span>
             <span className="text-dark-500 text-sm">{item.display_name}</span>
           </div>
-          {item.notes && (
-            <p className="text-dark-500 text-xs mt-1 truncate">{item.notes}</p>
-          )}
           {item.tags?.length > 0 && (
             <div className="flex gap-1 mt-1">
               {item.tags.map((tag: string) => (
