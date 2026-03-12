@@ -1,60 +1,47 @@
 import { NextResponse } from 'next/server'
 
 const DEMO_SKILLS = [
-  {
-    id: 'psar-001',
-    name: 'PSAR Trend',
-    role_type: 'strategist',
-    version: '1.0.0',
-    description: 'Parabolic SAR trend following with EMA filter and ADX regime guard',
-    author: 'QuantArmy',
-    source: 'builtin',
-    source_url: null,
-    parameters: [
-      { name: 'af_start', type: 'float', default: 0.01, min_value: 0.001, max_value: 0.1, description: 'PSAR acceleration factor start' },
-      { name: 'af_step', type: 'float', default: 0.01, min_value: 0.001, max_value: 0.1, description: 'PSAR acceleration factor step' },
-      { name: 'af_max', type: 'float', default: 0.1, min_value: 0.05, max_value: 0.5, description: 'PSAR acceleration factor max' },
-      { name: 'ema_period', type: 'int', default: 50, min_value: 10, max_value: 200, description: 'EMA trend filter period' },
-      { name: 'adx_period', type: 'int', default: 14, min_value: 7, max_value: 30, description: 'ADX regime detection period' },
-      { name: 'adx_min', type: 'float', default: 20.0, min_value: 10.0, max_value: 40.0, description: 'Minimum ADX for trending regime' },
-      { name: 'size_pct', type: 'float', default: 0.2, min_value: 0.05, max_value: 0.5, description: 'Position size as % of equity' },
-      { name: 'sl_atr_mult', type: 'float', default: 2.5, min_value: 1.0, max_value: 5.0, description: 'Stop loss ATR multiplier' },
-      { name: 'tp_atr_mult', type: 'float', default: 4.0, min_value: 1.0, max_value: 10.0, description: 'Take profit ATR multiplier' },
-    ],
-    backtest_result: {
-      trades: 27, win_rate: 0.444, profit_factor: 1.07,
-      max_drawdown: 0.024, sharpe_ratio: 0.07, total_return: 0.004,
-    },
-    status: 'active',
-  },
-  {
-    id: 'risk-001',
-    name: 'Basic Risk Officer',
-    role_type: 'risk_officer',
-    version: '1.0.0',
-    description: 'Position sizing, drawdown guard, max exposure limits',
-    author: 'QuantArmy',
-    source: 'builtin',
-    source_url: null,
-    parameters: [
-      { name: 'max_position_pct', type: 'float', default: 0.15, min_value: 0.05, max_value: 0.5, description: 'Max single position as % of equity' },
-      { name: 'max_total_exposure', type: 'float', default: 0.8, min_value: 0.3, max_value: 1.0, description: 'Max total portfolio exposure' },
-      { name: 'max_positions', type: 'int', default: 10, min_value: 1, max_value: 20, description: 'Max number of open positions' },
-      { name: 'drawdown_halt_pct', type: 'float', default: 0.15, min_value: 0.05, max_value: 0.5, description: 'Halt new trades if drawdown exceeds this' },
-    ],
-    backtest_result: null,
-    status: 'active',
-  },
+  { id: 'ceo-consensus-001', name: 'Consensus Judge', role_type: 'ceo', version: '1.0.0', description: 'Aggregate the other seven role opinions into a clear directional summary with disagreement heat.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'min_consensus', type: 'float', default: 0.6, min_value: 0.3, max_value: 1.0, description: 'Minimum alignment score before CEO emits a directional bias' }], backtest_result: null, status: 'active' },
+  { id: 'ceo-allocator-001', name: 'Capital Allocator', role_type: 'ceo', version: '1.0.0', description: 'Translate team confidence into watch priority and capital attention level.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'max_focus_symbols', type: 'int', default: 5, min_value: 1, max_value: 20, description: 'Maximum number of high-attention symbols at once' }], backtest_result: null, status: 'active' },
+  { id: 'ceo-validator-001', name: 'Thesis Validator', role_type: 'ceo', version: '1.0.0', description: 'Check whether the current thesis still holds and define invalidation conditions.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'validity_hours', type: 'int', default: 12, min_value: 1, max_value: 168, description: 'How long a thesis remains valid before review' }], backtest_result: null, status: 'active' },
+
+  { id: 'cto-data-001', name: 'Data Integrity Checker', role_type: 'cto', version: '1.0.0', description: 'Validate freshness, completeness, and consistency of symbol data before analysis.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'max_staleness_sec', type: 'int', default: 90, min_value: 10, max_value: 3600, description: 'Maximum tolerated quote delay' }], backtest_result: null, status: 'active' },
+  { id: 'cto-audit-001', name: 'Signal Reliability Auditor', role_type: 'cto', version: '1.0.0', description: 'Score whether current outputs are backed by enough evidence and stable inputs.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'min_sample_size', type: 'int', default: 30, min_value: 5, max_value: 500, description: 'Minimum sample size before approving a signal family' }], backtest_result: null, status: 'active' },
+  { id: 'cto-pipeline-001', name: 'Pipeline Health Monitor', role_type: 'cto', version: '1.0.0', description: 'Check whether all role pipelines completed and remain internally consistent.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'max_role_lag_min', type: 'int', default: 30, min_value: 1, max_value: 1440, description: 'Maximum delay allowed between role analyses' }], backtest_result: null, status: 'active' },
+
+  { id: 'psar-001', name: 'PSAR Trend', role_type: 'strategist', version: '1.0.0', description: 'Parabolic SAR trend following with EMA filter and ADX regime guard.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'af_start', type: 'float', default: 0.01, min_value: 0.001, max_value: 0.1, description: 'PSAR acceleration factor start' }, { name: 'af_step', type: 'float', default: 0.01, min_value: 0.001, max_value: 0.1, description: 'PSAR acceleration factor step' }, { name: 'af_max', type: 'float', default: 0.1, min_value: 0.05, max_value: 0.5, description: 'PSAR acceleration factor max' }], backtest_result: { trades: 27, win_rate: 0.444, profit_factor: 1.07, max_drawdown: 0.024, sharpe_ratio: 0.07, total_return: 0.004 }, status: 'active' },
+  { id: 'rsi-001', name: 'RSI Mean Reversion', role_type: 'strategist', version: '1.0.0', description: 'Fade short-term exhaustion inside bounded/ranging conditions using RSI extremes.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'rsi_period', type: 'int', default: 14, min_value: 5, max_value: 50, description: 'RSI lookback period' }, { name: 'oversold', type: 'float', default: 28, min_value: 5, max_value: 45, description: 'RSI long trigger threshold' }], backtest_result: { trades: 43, win_rate: 0.512, profit_factor: 0.96, max_drawdown: 0.041, sharpe_ratio: -0.03, total_return: -0.006 }, status: 'active' },
+  { id: 'breakout-001', name: 'Breakout Momentum', role_type: 'strategist', version: '1.0.0', description: 'Trade expansion moves when price escapes recent range with volume confirmation.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'lookback', type: 'int', default: 20, min_value: 5, max_value: 100, description: 'Range breakout lookback' }, { name: 'volume_multiplier', type: 'float', default: 1.5, min_value: 1.0, max_value: 5.0, description: 'Required volume expansion' }], backtest_result: { trades: 19, win_rate: 0.421, profit_factor: 1.18, max_drawdown: 0.031, sharpe_ratio: 0.13, total_return: 0.011 }, status: 'active' },
+
+  { id: 'risk-001', name: 'Position Guard', role_type: 'risk_officer', version: '1.0.0', description: 'Position sizing, drawdown guard, and total exposure limits.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'max_position_pct', type: 'float', default: 0.15, min_value: 0.05, max_value: 0.5, description: 'Max single position as % of equity' }], backtest_result: null, status: 'active' },
+  { id: 'risk-vol-001', name: 'Volatility Guard', role_type: 'risk_officer', version: '1.0.0', description: 'Reject or downweight setups when volatility and gap risk expand too quickly.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'max_atr_pct', type: 'float', default: 0.08, min_value: 0.01, max_value: 0.3, description: 'Maximum ATR as % of price' }], backtest_result: null, status: 'active' },
+  { id: 'risk-dd-001', name: 'Drawdown Scenario', role_type: 'risk_officer', version: '1.0.0', description: 'Project worst-case pullback and define invalidation / stop ranges.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'scenario_confidence', type: 'float', default: 0.95, min_value: 0.5, max_value: 0.99, description: 'Confidence level for stress scenario' }], backtest_result: null, status: 'active' },
+
+  { id: 'collector-news-001', name: 'News Pulse', role_type: 'collector', version: '1.0.0', description: 'Summarize recent news catalysts and their likely directional bias.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'lookback_hours', type: 'int', default: 24, min_value: 1, max_value: 168, description: 'News lookback window' }], backtest_result: null, status: 'active' },
+  { id: 'collector-social-001', name: 'Social Sentiment', role_type: 'collector', version: '1.0.0', description: 'Track crowd attention and social discussion skew around a symbol narrative.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'min_mentions', type: 'int', default: 20, min_value: 1, max_value: 5000, description: 'Minimum mentions for stable score' }], backtest_result: null, status: 'active' },
+  { id: 'collector-event-001', name: 'Event Tracker', role_type: 'collector', version: '1.0.0', description: 'Monitor upcoming catalysts such as earnings, unlocks, upgrades, and macro events.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'lookahead_days', type: 'int', default: 14, min_value: 1, max_value: 180, description: 'Forward event horizon' }], backtest_result: null, status: 'active' },
+
+  { id: 'analyst-structure-001', name: 'Market Structure', role_type: 'analyst', version: '1.0.0', description: 'Map trend, regime, support/resistance, and where price sits inside the larger structure.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'structure_lookback', type: 'int', default: 200, min_value: 50, max_value: 1000, description: 'Bars used to derive structure' }], backtest_result: null, status: 'active' },
+  { id: 'analyst-factor-001', name: 'Factor Snapshot', role_type: 'analyst', version: '1.0.0', description: 'Summarize momentum, volatility, volume, and correlation factors in one view.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'momentum_window', type: 'int', default: 20, min_value: 5, max_value: 252, description: 'Momentum lookback' }], backtest_result: null, status: 'active' },
+  { id: 'analyst-lens-001', name: 'Backtest Lens', role_type: 'analyst', version: '1.0.0', description: 'Compare the current market condition to similar historical regimes and show likely outcomes.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'top_matches', type: 'int', default: 10, min_value: 1, max_value: 100, description: 'Historical analogues to include' }], backtest_result: null, status: 'active' },
+
+  { id: 'researcher-cases-001', name: 'Comparable Cases', role_type: 'researcher', version: '1.0.0', description: 'Retrieve similar historical cases and explain how they resolved.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'case_lookback_days', type: 'int', default: 365, min_value: 30, max_value: 3650, description: 'Historical search horizon' }], backtest_result: null, status: 'active' },
+  { id: 'researcher-narrative-001', name: 'Narrative Tracker', role_type: 'researcher', version: '1.0.0', description: 'Track whether the dominant market narrative around a symbol is strengthening or fading.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'narrative_window_days', type: 'int', default: 30, min_value: 3, max_value: 180, description: 'Narrative evaluation window' }], backtest_result: null, status: 'active' },
+  { id: 'researcher-hunter-001', name: 'Open Source Hunter', role_type: 'researcher', version: '1.0.0', description: 'Recommend open-source strategies or repos relevant to the current symbol and regime.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'max_repos', type: 'int', default: 5, min_value: 1, max_value: 20, description: 'Maximum repo suggestions' }], backtest_result: null, status: 'active' },
+
+  { id: 'executor-liquidity-001', name: 'Liquidity Check', role_type: 'executor', version: '1.0.0', description: 'Assess order book depth, volume, and execution friendliness for the symbol.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'min_daily_volume', type: 'float', default: 1000000, min_value: 10000, max_value: 10000000000, description: 'Minimum daily notional volume' }], backtest_result: null, status: 'active' },
+  { id: 'executor-slippage-001', name: 'Slippage Estimator', role_type: 'executor', version: '1.0.0', description: 'Estimate slippage at different order sizes and volatility conditions.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'test_order_pct', type: 'float', default: 0.1, min_value: 0.01, max_value: 5.0, description: 'Order size as % of average bar volume' }], backtest_result: null, status: 'active' },
+  { id: 'executor-plan-001', name: 'Execution Plan', role_type: 'executor', version: '1.0.0', description: 'Convert a thesis into a practical entry/exit plan with tranche and order guidance.', author: 'QuantArmy', source: 'builtin', source_url: null, parameters: [{ name: 'max_tranches', type: 'int', default: 3, min_value: 1, max_value: 10, description: 'Maximum number of entry slices' }], backtest_result: null, status: 'active' },
 ]
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const roleType = searchParams.get('role_type')
+  const search = searchParams.get('search')?.toLowerCase()
 
   let filtered = DEMO_SKILLS
-  if (roleType) {
-    filtered = filtered.filter((s) => s.role_type === roleType)
-  }
+  if (roleType) filtered = filtered.filter((s) => s.role_type === roleType)
+  if (search) filtered = filtered.filter((s) => s.name.toLowerCase().includes(search) || s.description.toLowerCase().includes(search))
 
   return NextResponse.json({ ok: true, data: filtered, error: null })
 }

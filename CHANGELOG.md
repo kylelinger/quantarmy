@@ -8,11 +8,57 @@ Format: [SemVer](https://semver.org) | [Keep a Changelog](https://keepachangelog
 ## [Unreleased]
 
 ### Planned
-- Risk Officer built-in skill
-- Backtest engine
 - LLM skill adapter (GitHub import)
-- WebSocket live feed wire-up
-- Frontend API integration (replace placeholder data)
+- V2 battle/debate mode
+- Equity curve chart component
+- Backend cloud deployment (Render)
+- Company settings page
+
+---
+
+## [0.2.0-dev] — 2026-03-12
+
+### Added
+
+**24 Default Skill Cards** (3 per role × 8 roles)
+- CEO: Consensus Judge, Capital Allocator, Thesis Validator
+- CTO: Data Integrity Checker, Signal Reliability Auditor, Pipeline Health Monitor
+- Strategist: PSAR Trend, RSI Mean Reversion, Breakout Momentum
+- Risk Officer: Position Guard, Volatility Guard, Drawdown Scenario
+- Collector: News Pulse, Social Sentiment, Event Tracker
+- Analyst: Market Structure, Factor Snapshot, Backtest Lens
+- Researcher: Comparable Cases, Narrative Tracker, Open Source Hunter
+- Executor: Liquidity Check, Slippage Estimator, Execution Plan
+
+**Symbol Detail Page** (`/company/watchlist/[symbol]`)
+- TradingView embedded real-time chart (free, no API key needed)
+- Auto-maps crypto symbols → `BINANCE:`, US stocks → `NASDAQ:`/`NYSE:`
+- Dark theme, Chinese locale, MA + Volume studies
+- CEO summary panel, user notes panel
+- 8-role independent analysis grid (V1 product shape)
+
+**V1 Product Shape**
+- 8 roles operate as independent agents
+- Each role gives its own analysis per symbol
+- CEO summarizes but does not override
+- Users see team disagreement and consensus naturally
+
+**Demo Infrastructure**
+- Shared mutable demo store (`demo-store.ts`) for roles + watchlist
+- Skill equip route (`PUT /api/company/[id]/roles/[roleType]/skill`)
+- All demo routes use shared store for consistent state
+- Role page: framing section, default card count, current viewpoint display
+- Skill market: "默认卡组" section header, active badge
+- Watchlist: clickable symbol links to detail page
+
+**Backend**
+- `backend/app/skills/catalog.py` — centralized skill catalog (24 skills)
+- `backend/app/skills/seed.py` — rewritten to seed from catalog with update support
+
+### Changed
+- Role page: backtest button now only shows for strategist role
+- Skill market browse: improved layout with card grouping
+- Watchlist item: symbol text is now a link to detail page
 
 ---
 
@@ -21,73 +67,43 @@ Format: [SemVer](https://semver.org) | [Keep a Changelog](https://keepachangelog
 ### Added
 
 **Frontend**
-- `lib/types.ts` — All TypeScript types: Company, Role, Skill, Position, Trade, BacktestResult, Signal, WSEvent
-- `lib/api.ts` — Full API client: companyApi, roleApi, skillApi, tradingApi, marketApi
-- `lib/utils.ts` — Utilities: cn, formatCurrency, formatPercent, formatNumber, timeAgo, pnlColor
-- `components/Sidebar` — Role navigation sidebar with online/idle/error status dots
-- `components/Dashboard` — Company overview: equity metrics, positions table
-- `components/RolePanel` — Role detail: active skill display, parameter editor, backtest stats, log viewer
-- `components/SkillMarket` — Browse skills + GitHub import tab with import status flow
-- `components/TradeLog` — Real-time log strip at bottom of layout
-- `app/company/layout.tsx` — Shell layout: Sidebar (left) + content (right) + TradeLog (bottom)
-- `app/company/page.tsx` — Dashboard (company overview)
-- `app/company/new/page.tsx` — Company creation wizard (name, capital, market)
-- `app/company/[role]/page.tsx` — Dynamic role page with RolePanel + SkillMarket
+- Full TypeScript types, API client, utilities
+- Sidebar, Dashboard, RolePanel, SkillMarket, TradeLog components
+- Company pages: overview, creation wizard, role detail
+- Watchlist system with batch add, priority, analysis display
 
 **Backend**
-- `app/core/config.py` — Configuration constants
-- `app/core/database.py` — SQLAlchemy async engine + session factory
-- `app/models/company.py` — Company, Role, Position, Trade, Message ORM models
-- `app/models/skill.py` — Skill, SkillImport ORM models
-- `app/api/company.py` — Company CRUD API
-- `app/api/roles.py` — Role management API
-- `app/api/skills.py` — Skill registry + import API
-- `app/api/trading.py` — Positions, history, start/stop API
-- `app/api/market.py` — Market symbols, price, klines API
-- `app/services/trading_engine.py` — Simulation trading engine with tick loop
-- `app/services/skill_adapter.py` — LLM-powered GitHub repo adapter (skeleton)
-- `app/services/data_pipeline.py` — Binance REST data fetcher
-- `app/sandbox/runner.py` — Subprocess-based skill sandbox runner
-- `app/ws/manager.py` — WebSocket connection manager (per-company rooms)
-- `app/ws/router.py` — WebSocket endpoint with heartbeat
-- `app/skills/base.py` — BaseSkill interface + TradeContext + SkillOutput
-- `app/skills/builtin/psar_trend.py` — **PSAR Trend Following skill (fully implemented)**
-  - Parabolic SAR with configurable AF
-  - EMA trend filter
-  - ADX regime guard (no trade in ranging markets)
-  - ATR-based SL/TP
-- `app/skills/seed.py` — Seeds built-in skills to DB on startup
-- `main.py` — FastAPI app: lifespan, CORS, all routers
-- `requirements.txt` — Backend dependencies
+- FastAPI app with SQLite async DB
+- Company CRUD, Role management, Skill registry APIs
+- TradingEngine with tick loop pipeline
+- BacktestEngine with walk-forward SL/TP simulation
+- PSAR Trend Following skill (fully implemented)
+- Risk Officer skill (position sizing, drawdown guard)
+- WebSocket manager with per-company rooms
+- Subprocess-based skill sandbox
 
 **Documentation**
-- `docs/ARCHITECTURE.md` — Full system architecture with data flow diagrams
-- `docs/SKILL_SPEC.md` — Complete skill development guide
-- `docs/API_SPEC.md` — Full REST + WebSocket API reference
-- `docs/CONTEXT.md` — Session context for AI agent continuity
-- `docs/PROJECT_PLAN.md` — Product roadmap and feature prioritization
-- `CHANGELOG.md` — This file
-- `README.md` — Quick start guide
+- ARCHITECTURE.md, SKILL_SPEC.md, API_SPEC.md
+- CONTEXT.md, PROJECT_PLAN.md, CHANGELOG.md, README.md
 
-**Project Setup**
-- Git repository initialized
-- .gitignore for Python/Node/data files
+**Deployment**
+- Vercel frontend: `https://frontend-beige-kappa-51.vercel.app`
+- GitHub repo: `https://github.com/kylelinger/quantarmy`
+- Render config: `render.yaml`
 
 ### Architecture Decisions
-- SQLite + aiosqlite for async DB operations (zero-config)
-- Subprocess-based skill isolation (no Docker required)
-- Unified `{ ok, data, error }` API response format
+- SQLite + aiosqlite (zero-config async DB)
+- Subprocess skill isolation (no Docker)
+- Unified `{ ok, data, error }` API response
 - WebSocket rooms per company_id
-- BaseSkill as the universal interface for all skills
+- BaseSkill universal interface
 
 ---
 
 ## [0.0.1] — 2026-03-11
 
 ### Added
-- Initial project structure
-- README + PROJECT_PLAN.md
-- Git initialization
+- Initial project structure, README, PROJECT_PLAN.md
 
 ---
 

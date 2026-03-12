@@ -3,37 +3,39 @@ from sqlalchemy import select
 
 from app.core.database import async_session
 from app.models.skill import Skill
-from app.skills.builtin import BUILTIN_SKILLS
+from app.skills.catalog import BUILTIN_SKILL_CATALOG
 
 
 async def seed_builtin_skills():
     """Ensure all built-in skills exist in the database."""
     async with async_session() as db:
-        for skill_class in BUILTIN_SKILLS:
-            # Check if skill already exists (by name + source=builtin)
+        for spec in BUILTIN_SKILL_CATALOG:
             result = await db.execute(
-                select(Skill).where(Skill.name == skill_class.name, Skill.source == "builtin")
+                select(Skill).where(Skill.name == spec["name"], Skill.source == "builtin")
             )
             existing = result.scalar_one_or_none()
 
             if not existing:
                 skill = Skill(
-                    name=skill_class.name,
-                    role_type=skill_class.role_type,
-                    version=skill_class.version,
-                    description=skill_class.description,
+                    name=spec["name"],
+                    role_type=spec["role_type"],
+                    version=spec.get("version", "1.0.0"),
+                    description=spec.get("description", ""),
                     author="QuantArmy",
                     source="builtin",
-                    parameters=skill_class.parameters,
+                    parameters=spec.get("parameters", []),
+                    backtest_result=spec.get("backtest_result"),
                 )
                 db.add(skill)
-                print(f"  ✅ Seeded skill: {skill_class.name}")
+                print(f"  ✅ Seeded skill: {spec['name']}")
             else:
-                # Update metadata if version changed
-                if existing.version != skill_class.version:
-                    existing.description = skill_class.description
-                    existing.parameters = skill_class.parameters
-                    existing.version = skill_class.version
-                    print(f"  🔄 Updated skill: {skill_class.name} → v{skill_class.version}")
+                changed = False
+                for field in ["role_type", "version", "description", "parameters", "backtest_result"]:
+                    value = spec.get(field)
+                    if getattr(existing, field) != value:
+                        setattr(existing, field, value)
+                        changed = True
+                if changed:
+                    print(f"  🔄 Updated skill: {spec['name']} → v{spec.get('version', '1.0.0')}")
 
         await db.commit()

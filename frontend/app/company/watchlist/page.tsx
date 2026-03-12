@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import Link from 'next/link'
+import { useState } from 'react'
 import { useCompanyContext } from '@/lib/CompanyContext'
 import { useWatchlist, addToWatchlist, removeFromWatchlist, updateWatchlistItem, requestAnalysis, batchAddWatchlist } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
@@ -254,7 +255,13 @@ function WatchlistCard({
         {/* Symbol info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-dark-100">{item.symbol}</span>
+            <Link
+              href={`/company/watchlist/${encodeURIComponent(item.symbol)}`}
+              className="text-lg font-bold text-dark-100 hover:text-army-400 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {item.symbol}
+            </Link>
             {priority.icon && <span>{priority.icon}</span>}
             <span className="text-dark-500 text-sm">{item.display_name}</span>
           </div>
