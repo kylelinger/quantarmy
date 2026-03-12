@@ -50,7 +50,7 @@ const ALL_CRYPTO = [
   { symbol: 'STXUSDT', name: 'Stacks', aliases: ['STX'] },
 ]
 
-const ALL_STOCKS = [
+const ALL_US_STOCKS = [
   { symbol: 'AAPL', name: 'Apple', aliases: ['苹果'] },
   { symbol: 'MSFT', name: 'Microsoft', aliases: ['微软'] },
   { symbol: 'GOOGL', name: 'Google / Alphabet', aliases: ['谷歌', 'GOOG'] },
@@ -78,7 +78,7 @@ const ALL_STOCKS = [
   { symbol: 'BAC', name: 'Bank of America', aliases: ['美国银行'] },
   { symbol: 'WMT', name: 'Walmart', aliases: ['沃尔玛'] },
   { symbol: 'DIS', name: 'Walt Disney', aliases: ['迪士尼'] },
-  { symbol: 'BABA', name: 'Alibaba', aliases: ['阿里巴巴'] },
+  { symbol: 'BABA', name: 'Alibaba (US ADR)', aliases: ['阿里巴巴'] },
   { symbol: 'PDD', name: 'PDD Holdings', aliases: ['拼多多'] },
   { symbol: 'JD', name: 'JD.com', aliases: ['京东'] },
   { symbol: 'BIDU', name: 'Baidu', aliases: ['百度'] },
@@ -87,9 +87,80 @@ const ALL_STOCKS = [
   { symbol: 'XPEV', name: 'XPeng', aliases: ['小鹏汽车'] },
 ]
 
-// For backward compat with hot-tags
+const ALL_HK_STOCKS = [
+  { symbol: '0700.HK', name: 'Tencent', aliases: ['腾讯', '腾讯控股'] },
+  { symbol: '9988.HK', name: 'Alibaba', aliases: ['阿里巴巴', '阿里'] },
+  { symbol: '9618.HK', name: 'JD.com', aliases: ['京东'] },
+  { symbol: '3690.HK', name: 'Meituan', aliases: ['美团'] },
+  { symbol: '9888.HK', name: 'Baidu', aliases: ['百度'] },
+  { symbol: '1810.HK', name: 'Xiaomi', aliases: ['小米'] },
+  { symbol: '9999.HK', name: 'NetEase', aliases: ['网易'] },
+  { symbol: '0388.HK', name: 'HKEX', aliases: ['港交所', '香港交易所'] },
+  { symbol: '0005.HK', name: 'HSBC', aliases: ['汇丰', '汇丰银行'] },
+  { symbol: '0941.HK', name: 'China Mobile', aliases: ['中国移动'] },
+  { symbol: '2318.HK', name: 'Ping An Insurance', aliases: ['平安', '中国平安'] },
+  { symbol: '0939.HK', name: 'CCB', aliases: ['建设银行', '建行'] },
+  { symbol: '1398.HK', name: 'ICBC', aliases: ['工商银行', '工行'] },
+  { symbol: '0883.HK', name: 'CNOOC', aliases: ['中海油'] },
+  { symbol: '0857.HK', name: 'PetroChina', aliases: ['中石油', '中国石油'] },
+  { symbol: '2020.HK', name: 'Anta Sports', aliases: ['安踏'] },
+  { symbol: '9961.HK', name: 'Trip.com', aliases: ['携程'] },
+  { symbol: '1024.HK', name: 'Kuaishou', aliases: ['快手'] },
+  { symbol: '0268.HK', name: 'Kingdee', aliases: ['金蝶'] },
+  { symbol: '0175.HK', name: 'Geely Auto', aliases: ['吉利', '吉利汽车'] },
+  { symbol: '2331.HK', name: 'Li Ning', aliases: ['李宁'] },
+  { symbol: '6618.HK', name: 'JD Health', aliases: ['京东健康'] },
+  { symbol: '0981.HK', name: 'SMIC', aliases: ['中芯国际'] },
+  { symbol: '2382.HK', name: 'Sunny Optical', aliases: ['舜宇光学'] },
+  { symbol: '0027.HK', name: 'Galaxy Entertainment', aliases: ['银河娱乐'] },
+  { symbol: '1211.HK', name: 'BYD', aliases: ['比亚迪'] },
+  { symbol: '0285.HK', name: 'BYD Electronic', aliases: ['比亚迪电子'] },
+  { symbol: '2269.HK', name: 'WuXi Bio', aliases: ['药明生物'] },
+  { symbol: '9626.HK', name: 'Bilibili', aliases: ['B站', '哔哩哔哩'] },
+  { symbol: '0241.HK', name: 'Alibaba Health', aliases: ['阿里健康'] },
+]
+
+const ALL_A_SHARES = [
+  { symbol: '600519.SS', name: 'Kweichow Moutai', aliases: ['茅台', '贵州茅台'] },
+  { symbol: '000001.SZ', name: 'Ping An Bank', aliases: ['平安银行'] },
+  { symbol: '600036.SS', name: 'China Merchants Bank', aliases: ['招商银行', '招行'] },
+  { symbol: '601318.SS', name: 'Ping An Insurance', aliases: ['中国平安', '平安'] },
+  { symbol: '000858.SZ', name: 'Wuliangye', aliases: ['五粮液'] },
+  { symbol: '002594.SZ', name: 'BYD', aliases: ['比亚迪'] },
+  { symbol: '300750.SZ', name: 'CATL', aliases: ['宁德时代'] },
+  { symbol: '601012.SS', name: 'LONGi Green Energy', aliases: ['隆基绿能', '隆基'] },
+  { symbol: '600900.SS', name: 'CYPC', aliases: ['长江电力'] },
+  { symbol: '002415.SZ', name: 'Hikvision', aliases: ['海康威视'] },
+  { symbol: '600276.SS', name: 'Hengrui Medicine', aliases: ['恒瑞医药'] },
+  { symbol: '601888.SS', name: 'China Tourism Group', aliases: ['中国中免'] },
+  { symbol: '000333.SZ', name: 'Midea', aliases: ['美的', '美的集团'] },
+  { symbol: '000651.SZ', name: 'Gree Electric', aliases: ['格力', '格力电器'] },
+  { symbol: '600030.SS', name: 'CITIC Securities', aliases: ['中信证券'] },
+  { symbol: '601166.SS', name: 'Industrial Bank', aliases: ['兴业银行'] },
+  { symbol: '600887.SS', name: 'Yili Group', aliases: ['伊利', '伊利股份'] },
+  { symbol: '002230.SZ', name: 'iFlytek', aliases: ['科大讯飞'] },
+  { symbol: '300059.SZ', name: 'East Money', aliases: ['东方财富'] },
+  { symbol: '601899.SS', name: 'Zijin Mining', aliases: ['紫金矿业'] },
+  { symbol: '600809.SS', name: 'Shanxi Fenjiu', aliases: ['山西汾酒'] },
+  { symbol: '002475.SZ', name: 'Luxshare', aliases: ['立讯精密'] },
+  { symbol: '300760.SZ', name: 'Mindray', aliases: ['迈瑞医疗'] },
+  { symbol: '601138.SS', name: 'WSTONE', aliases: ['工业富联'] },
+  { symbol: '002714.SZ', name: 'Muyuan Foods', aliases: ['牧原股份'] },
+  { symbol: '600104.SS', name: 'SAIC Motor', aliases: ['上汽集团', '上汽'] },
+  { symbol: '601668.SS', name: 'CSCEC', aliases: ['中国建筑'] },
+  { symbol: '000725.SZ', name: 'BOE Technology', aliases: ['京东方'] },
+  { symbol: '601633.SS', name: 'Great Wall Motor', aliases: ['长城汽车'] },
+  { symbol: '002049.SZ', name: 'Unigroup Guoxin', aliases: ['紫光国微'] },
+]
+
+// Combined for backward compat
+const ALL_STOCKS = ALL_US_STOCKS
+
+// Popular picks per market
 const CRYPTO_POPULAR = ALL_CRYPTO.slice(0, 5)
-const STOCK_POPULAR = ALL_STOCKS.slice(0, 5)
+const US_POPULAR = ALL_US_STOCKS.slice(0, 5)
+const HK_POPULAR = ALL_HK_STOCKS.slice(0, 5)
+const A_POPULAR = ALL_A_SHARES.slice(0, 5)
 
 const PRIORITY_LABELS: Record<number, { label: string; color: string; icon: string }> = {
   0: { label: '普通', color: 'text-dark-500', icon: '' },
@@ -104,17 +175,25 @@ export default function WatchlistPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [highlightIdx, setHighlightIdx] = useState(-1)
-  const [selectedMarket, setSelectedMarket] = useState<'crypto' | 'stock'>(
-    (company?.market as 'crypto' | 'stock') || 'crypto'
-  )
+  const [selectedMarket, setSelectedMarket] = useState<'crypto' | 'us_stock' | 'hk_stock' | 'a_share'>('crypto')
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const existingSymbols = new Set(items.map((i: any) => i.symbol))
-  const allSymbols = selectedMarket === 'crypto' ? ALL_CRYPTO : ALL_STOCKS
-  const suggestions = selectedMarket === 'crypto' ? CRYPTO_POPULAR : STOCK_POPULAR
+  const allSymbols = selectedMarket === 'crypto' ? ALL_CRYPTO
+    : selectedMarket === 'hk_stock' ? ALL_HK_STOCKS
+    : selectedMarket === 'a_share' ? ALL_A_SHARES
+    : ALL_US_STOCKS
+  const suggestions = selectedMarket === 'crypto' ? CRYPTO_POPULAR
+    : selectedMarket === 'hk_stock' ? HK_POPULAR
+    : selectedMarket === 'a_share' ? A_POPULAR
+    : US_POPULAR
+  const marketLabel = selectedMarket === 'crypto' ? '加密货币'
+    : selectedMarket === 'hk_stock' ? '港股'
+    : selectedMarket === 'a_share' ? 'A股'
+    : '美股'
 
   // Filter search results
   const searchResults = searchQuery.trim().length > 0
@@ -237,16 +316,19 @@ export default function WatchlistPage() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-dark-200">添加标的</h3>
           <div className="flex gap-1 bg-dark-850 rounded-lg p-1">
-            <button
-              onClick={() => setSelectedMarket('crypto')}
-              className={cn('px-4 py-1.5 text-sm rounded-md transition-colors',
-                selectedMarket === 'crypto' ? 'bg-dark-700 text-dark-100' : 'text-dark-400 hover:text-dark-200')}
-            >₿ 加密货币</button>
-            <button
-              onClick={() => setSelectedMarket('stock')}
-              className={cn('px-4 py-1.5 text-sm rounded-md transition-colors',
-                selectedMarket === 'stock' ? 'bg-dark-700 text-dark-100' : 'text-dark-400 hover:text-dark-200')}
-            >📈 股票</button>
+            {([
+              { key: 'crypto' as const, label: '₿ 加密货币' },
+              { key: 'us_stock' as const, label: '🇺🇸 美股' },
+              { key: 'hk_stock' as const, label: '🇭🇰 港股' },
+              { key: 'a_share' as const, label: '🇨🇳 A股' },
+            ]).map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setSelectedMarket(tab.key)}
+                className={cn('px-3 py-1.5 text-sm rounded-md transition-colors',
+                  selectedMarket === tab.key ? 'bg-dark-700 text-dark-100' : 'text-dark-400 hover:text-dark-200')}
+              >{tab.label}</button>
+            ))}
           </div>
         </div>
 
@@ -257,7 +339,7 @@ export default function WatchlistPage() {
             <input
               ref={inputRef}
               type="text"
-              placeholder={selectedMarket === 'crypto' ? '搜索加密货币... BTC、比特币、Ethereum' : '搜索股票... AAPL、苹果、Tesla'}
+              placeholder={`搜索${marketLabel}... ${selectedMarket === 'crypto' ? 'BTC、比特币' : selectedMarket === 'hk_stock' ? '0700、腾讯' : selectedMarket === 'a_share' ? '600519、茅台' : 'AAPL、苹果'}`}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)

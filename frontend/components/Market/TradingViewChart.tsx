@@ -2,11 +2,21 @@
 
 import { useEffect, useRef, useId } from 'react'
 
+const NASDAQ_STOCKS = new Set(['AAPL','MSFT','NVDA','META','AMD','AMZN','GOOGL','TSLA','NFLX','AVGO','CRM','ORCL','INTC','PLTR','COIN','MSTR','ARM','SMCI','SNOW','SHOP','BIDU','JD','PDD','BABA','NIO','LI','XPEV','SQ'])
+
 function toTradingViewSymbol(symbol: string) {
   const upper = symbol.toUpperCase()
-  if (upper.endsWith('USDT')) return `BINANCE:${upper}`
-  if (['AAPL', 'MSFT', 'NVDA', 'META', 'AMD', 'AMZN', 'GOOGL', 'TSLA'].includes(upper)) return `NASDAQ:${upper}`
-  return upper.includes('.') ? `NYSE:${upper.replace('.', '')}` : `NASDAQ:${upper}`
+  // Crypto
+  if (upper.endsWith('USDT') || upper.endsWith('BTC') || upper.endsWith('BUSD')) return `BINANCE:${upper}`
+  // Hong Kong
+  if (upper.endsWith('.HK')) return `HKEX:${upper.replace('.HK', '').replace(/^0+/, '')}`
+  // A-shares Shanghai
+  if (upper.endsWith('.SS')) return `SSE:${upper.replace('.SS', '')}`
+  // A-shares Shenzhen
+  if (upper.endsWith('.SZ')) return `SZSE:${upper.replace('.SZ', '')}`
+  // US stocks
+  if (NASDAQ_STOCKS.has(upper)) return `NASDAQ:${upper}`
+  return `NYSE:${upper}`
 }
 
 export function TradingViewChart({ symbol, interval = '60', height = 560 }: { symbol: string; interval?: string; height?: number }) {
