@@ -80,3 +80,15 @@ html, body {
 .army-glow {
   text-shadow: 0 0 20px #22c55e40;
 }
+
+/* Safe area for mobile bottom nav (iPhone notch etc.) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Mobile-first viewport meta hint */
+@supports (padding: max(0px)) {
+  .safe-area-bottom {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}

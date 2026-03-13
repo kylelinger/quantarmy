@@ -30,7 +30,7 @@ export function SidebarConnected() {
   ]
 
   return (
-    <aside className="w-[var(--sidebar-width)] h-screen bg-dark-900 border-r border-dark-800 flex flex-col fixed left-0 top-0 z-10">
+    <aside className="hidden lg:flex w-[var(--sidebar-width)] h-screen bg-dark-900 border-r border-dark-800 flex-col fixed left-0 top-0 z-10">
       {/* Company Header */}
       <div className="p-5 border-b border-dark-800">
         <Link href="/company/overview" className="block">
