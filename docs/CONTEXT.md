@@ -5,135 +5,67 @@
 
 ---
 
-## 2026-03-12 — Session 5: Equity Curve + GitHub Import + V2 Design + Real Market Data
+## 2026-03-12 — v1.0.0 Release
 
-**What happened:**
-- Equity curve chart component (lightweight-charts v5, area series + baseline)
-- Demo equity data API (30-day simulated curve)
-- Dashboard upgraded: equity curve + 8-role status grid + demo trading data
-- Landing page upgraded: bilingual hero, product flow, role grid, features
-- GitHub skill import API route (known repo shortcuts + generic fallback)
-- Real Binance market data: price, klines, ticker24h, batch endpoints
-- Frontend market API routes proxy Binance directly (Vercel standalone)
-- Live price ticker on symbol detail page (15s auto-refresh)
-- V2 Battle Mode design document (4 phases, challenge pairs, weighted voting)
-- All builds passing, pushed to GitHub + Vercel auto-deploy
+**Milestone: First stable release with real market data + 8-role analysis.**
 
-**Files changed:**
-- `frontend/components/Market/EquityCurve.tsx` — NEW
-- `frontend/app/api/company/[id]/trading/equity/route.ts` — NEW
-- `frontend/app/api/company/[id]/trading/positions/route.ts` — NEW
-- `frontend/app/api/company/[id]/trading/performance/route.ts` — NEW
-- `frontend/app/api/company/[id]/trading/history/route.ts` — NEW
-- `frontend/app/api/market/price/route.ts` — NEW (Binance proxy)
-- `frontend/app/api/market/ticker24h/route.ts` — NEW (Binance proxy)
-- `frontend/app/api/skills/import/route.ts` — NEW (GitHub import)
-- `frontend/app/company/page.tsx` — REWRITTEN: equity curve + roles grid
-- `frontend/app/page.tsx` — REWRITTEN: bilingual landing page
-- `frontend/app/company/watchlist/[symbol]/page.tsx` — Updated: live price ticker
-- `frontend/lib/hooks.ts` — Added: useEquityCurve, useTicker24h
-- `backend/app/api/market.py` — REWRITTEN: real Binance endpoints
-- `docs/V2_BATTLE_MODE.md` — NEW: V2 design document
+### What shipped:
+- 8-role AI analysis engine running on real Binance + Sina Finance data
+- 3-market coverage: Crypto, HK Stocks, A-Shares (all real-time, zero API keys)
+- Paper trading: $100K sim account, long/short, SL/TP, equity curve
+- Overview page: system-wide dashboard (team, watchlist, account)
+- Symbol detail page: TradingView chart + 8 structured analysis cards + CEO decision
+- Watchlist: star-toggle, autocomplete search, 98 assets (38 crypto + 30 HK + 30 A-shares)
+- 24 default skill cards (3 per role)
+- Toast notifications, code split (7 trading components)
+- Domain: quantarmy.vercel.app
 
----
+### Architecture decisions:
+- All analysis runs client-side (no backend needed for V1)
+- Market data proxied through Next.js API routes (server-side, avoids CORS)
+- US stocks removed (no free real-time source without API key)
+- Sina Finance replaces Yahoo Finance for HK/A-share quotes (real-time vs 15min delay)
+- HK klines still via Yahoo Finance (historical data OK)
+- Paper trading in localStorage (no server persistence in V1)
 
-## 2026-03-12 — Session 4: V1 Product Shape + 24 Skill Cards + Symbol Detail
+### Key files:
+- `frontend/lib/analysis/` — 8-role analysis engine (11 files, ~2000 lines)
+- `frontend/lib/paper-trading.ts` — paper trading engine
+- `frontend/lib/market-adapter.ts` — multi-market data adapter
+- `frontend/app/company/overview/page.tsx` — overview hub
+- `frontend/app/company/watchlist/[symbol]/page.tsx` — symbol detail + analysis
 
-**What happened:**
-- Defined V1 product shape: 8 independent agents, each outputs own analysis independently
-- Built complete 24-skill catalog (3 per role × 8 roles) — both backend `catalog.py` and frontend demo API
-- Created symbol detail page `/company/watchlist/[symbol]` with embedded TradingView real-time chart
-- TradingView widget: free, no API key, real-time K-line, dark theme, MA + Volume studies
-- Symbol mapping: `XXXUSDT` → `BINANCE:XXXUSDT`, US stocks → `NASDAQ:` or `NYSE:`
-- Shared demo store (`demo-store.ts`) so role skill switching and watchlist mutations persist across API calls
-- All 8 roles now have demo last_output viewpoints per symbol (BTCUSDT fully populated)
-- Role page enhanced: shows role framing, default card count, current viewpoint, backtest button only for strategist
-- Skill market section improved: shows "默认卡组" header, active badge on equipped skill
-- Watchlist symbol names are now clickable links to detail page
-- All demo API routes use shared mutable store for consistency
-- Frontend build passing ✅
-
-**24 Default Skill Cards:**
-
-| Role | Card 1 | Card 2 | Card 3 |
-|---|---|---|---|
-| CEO | Consensus Judge | Capital Allocator | Thesis Validator |
-| CTO | Data Integrity Checker | Signal Reliability Auditor | Pipeline Health Monitor |
-| Strategist | PSAR Trend | RSI Mean Reversion | Breakout Momentum |
-| Risk Officer | Position Guard | Volatility Guard | Drawdown Scenario |
-| Collector | News Pulse | Social Sentiment | Event Tracker |
-| Analyst | Market Structure | Factor Snapshot | Backtest Lens |
-| Researcher | Comparable Cases | Narrative Tracker | Open Source Hunter |
-| Executor | Liquidity Check | Slippage Estimator | Execution Plan |
-
-**Files changed this session:**
-- `backend/app/skills/catalog.py` — NEW: 24 built-in skill definitions
-- `backend/app/skills/seed.py` — REWRITTEN: seeds from catalog, updates existing
-- `frontend/lib/demo-store.ts` — NEW: shared mutable demo state for roles + watchlist
-- `frontend/app/api/skills/route.ts` — REWRITTEN: 24 demo skills with filtering
-- `frontend/app/api/company/[id]/roles/route.ts` — REWRITTEN: uses demo-store
-- `frontend/app/api/company/[id]/roles/[roleType]/skill/route.ts` — NEW: skill equip endpoint
-- `frontend/app/api/company/[id]/watchlist/route.ts` — REWRITTEN: uses demo-store
-- `frontend/app/api/company/[id]/watchlist/[itemId]/route.ts` — REWRITTEN: uses demo-store
-- `frontend/app/company/watchlist/page.tsx` — Updated: symbol links to detail page
-- `frontend/app/company/watchlist/[symbol]/page.tsx` — NEW: symbol detail page
-- `frontend/components/Market/TradingViewChart.tsx` — NEW: TradingView embedded chart
-- `frontend/app/company/[role]/page.tsx` — Enhanced: role framing, viewpoint, conditional backtest
-
-**Current status:**
-- ✅ 24 built-in skills defined (backend + frontend)
-- ✅ Symbol detail page with real-time TradingView chart
-- ✅ 8 roles with independent viewpoints per symbol
-- ✅ Shared demo state for consistent API behavior
-- ✅ Frontend build passing
-- ⏳ Vercel deploy pending (push + auto-deploy)
-- ❌ LLM skill adapter (GitHub import is still a stub)
-- ❌ Backend cloud deployment (Render)
-- ❌ V2 battle/debate system
-
-**Next tasks:**
-1. Push to GitHub + Vercel auto-deploy
-2. Backend deployment to Render (via dashboard)
-3. LLM adapter for GitHub skill import
-4. V2 battle mode design
-5. Equity curve chart component
+### What's next (V1.1):
+- Backend deploy to Render
+- Real-time price updates (WebSocket or polling)
+- Mobile responsiveness (sidebar fixed 280px, unusable on phones)
+- Landing page improvements
+- V2 battle/debate system design
 
 ---
 
-## 2026-03-11 — Session 3: Full Pipeline Live
+## 2026-03-11 — Sessions 1-4: Project Bootstrap
 
 **What happened:**
-- Connected TradingEngine to role pipeline: Strategist → Risk Officer → paper execution
-- Implemented BacktestEngine: walk-forward backtest with SL/TP simulation, full metrics
-- Built Risk Officer skill: max position sizing, drawdown halt, exposure cap, SL bounds
-- Wired frontend to real API: CompanyContext provider, React hooks, WebSocket log feed
-- Tested everything end-to-end
-
-**Current status:**
-- ✅ Backend fully functional (all APIs work, tested)
-- ✅ TradingEngine: tick loop → fetch klines → strategist → risk officer → paper execute
-- ✅ BacktestEngine: walk-forward, SL/TP, metrics, equity curve
-- ✅ Frontend: all pages use real API hooks, WebSocket connected
+- Project initialized with Next.js 15 + Tailwind 3.4
+- Backend skeleton: FastAPI + SQLite + WebSocket
+- Frontend skeleton: all pages, components, types, API client
+- Deployed to Vercel: `frontend-beige-kappa-51.vercel.app`
+- GitHub repo: `github.com/kylelinger/quantarmy`
 
 ---
 
-## Active Decisions
+## Quick Reference
 
-| Decision | Value |
-|---|---|
-| Project name | quantarmy |
-| V1 product | 8 independent agents, user picks symbols, roles analyze independently |
-| V2 product | Battle/debate → CEO aggregates with validity check |
-| Default skills | 3 per role × 8 roles = 24 total |
-| Real-time chart | TradingView embedded widget (free, no key) |
-| Demo state | Shared mutable store in demo-store.ts |
-| Backtest interval mapping | 1w→1h, 1m→1h, 3m→4h, 6m→1d, 1y→1d |
-| Skill cache key | skill_id + hash(config) |
-| WS event cap | Last 200 events in client |
-| Company state | localStorage + API |
-
-## Known Issues
-- [ ] Backend not deployed publicly yet (Render pending)
-- [ ] GitHub import pipeline is a stub (needs LLM)
-- [ ] Company settings page not built
-- [ ] Equity curve chart needs charting library
+| Item | Value |
+|------|-------|
+| Version | 1.0.0 |
+| Live URL | https://quantarmy.vercel.app |
+| GitHub | https://github.com/kylelinger/quantarmy |
+| Framework | Next.js 15.5 + Tailwind 3.4.19 |
+| Markets | Crypto (Binance) · HK (Sina) · A-shares (Sina) |
+| Analysis | 8 roles, client-side, real data |
+| Trading | Paper only, localStorage, $100K |
+| Backend | Not deployed (planned: Render) |
+| Tailwind | v3.4.19 |
+| Deploy | `vercel --prod --yes` (manual) |

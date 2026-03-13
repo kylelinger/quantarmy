@@ -1,115 +1,91 @@
 # Changelog
 
-All notable changes to QuantArmy will be documented here.
-Format: [SemVer](https://semver.org) | [Keep a Changelog](https://keepachangelog.com)
+All notable changes to QuantArmy (量化军团) are documented here.
+
+Format: [SemVer](https://semver.org/) · Types: Added, Changed, Fixed, Removed
 
 ---
 
-## [Unreleased]
+## [1.0.0] — 2026-03-12
 
-### Planned
-- LLM skill adapter (GitHub import)
-- V2 battle/debate mode
-- Equity curve chart component
-- Backend cloud deployment (Render)
-- Company settings page
-
----
-
-## [0.2.0-dev] — 2026-03-12
+> 🎉 First stable release. 8-role AI analysis on real market data, paper trading, 3-market coverage.
 
 ### Added
-
-**24 Default Skill Cards** (3 per role × 8 roles)
-- CEO: Consensus Judge, Capital Allocator, Thesis Validator
-- CTO: Data Integrity Checker, Signal Reliability Auditor, Pipeline Health Monitor
-- Strategist: PSAR Trend, RSI Mean Reversion, Breakout Momentum
-- Risk Officer: Position Guard, Volatility Guard, Drawdown Scenario
-- Collector: News Pulse, Social Sentiment, Event Tracker
-- Analyst: Market Structure, Factor Snapshot, Backtest Lens
-- Researcher: Comparable Cases, Narrative Tracker, Open Source Hunter
-- Executor: Liquidity Check, Slippage Estimator, Execution Plan
-
-**Symbol Detail Page** (`/company/watchlist/[symbol]`)
-- TradingView embedded real-time chart (free, no API key needed)
-- Auto-maps crypto symbols → `BINANCE:`, US stocks → `NASDAQ:`/`NYSE:`
-- Dark theme, Chinese locale, MA + Volume studies
-- CEO summary panel, user notes panel
-- 8-role independent analysis grid (V1 product shape)
-
-**V1 Product Shape**
-- 8 roles operate as independent agents
-- Each role gives its own analysis per symbol
-- CEO summarizes but does not override
-- Users see team disagreement and consensus naturally
-
-**Demo Infrastructure**
-- Shared mutable demo store (`demo-store.ts`) for roles + watchlist
-- Skill equip route (`PUT /api/company/[id]/roles/[roleType]/skill`)
-- All demo routes use shared store for consistent state
-- Role page: framing section, default card count, current viewpoint display
-- Skill market: "默认卡组" section header, active badge
-- Watchlist: clickable symbol links to detail page
-
-**Backend**
-- `backend/app/skills/catalog.py` — centralized skill catalog (24 skills)
-- `backend/app/skills/seed.py` — rewritten to seed from catalog with update support
+- **8-Role AI Analysis Engine** (`frontend/lib/analysis/`)
+  - Collector: 24h volume, bid/ask ratio, large trades, fund flow
+  - Strategist: PSAR (slow AF), EMA 20/50/200, ADX, RSI, MACD
+  - Risk Officer: ATR%, volatility percentile, position sizing, SL/TP
+  - Analyst: multi-timeframe trend, S/R levels, candlestick patterns
+  - Researcher: volatility stats, BTC beta, day-of-week seasonality
+  - Executor: spread, slippage estimation, liquidity scoring
+  - CTO: data completeness audit, anomaly detection
+  - CEO: weighted consensus aggregation, action plan, invalidation
+- **Multi-Market Data** — 3 markets, all real-time, zero API keys
+  - Crypto: Binance API (`data-api.binance.vision`)
+  - HK Stocks: Sina Finance real-time quotes + Yahoo Finance klines
+  - A-Shares: Sina Finance real-time quotes + Sina JSONP klines
+- **Paper Trading Engine** (`frontend/lib/paper-trading.ts`)
+  - $100K simulated account, 0.1% fee model
+  - Open long/short, close, adjust (SL/TP) positions
+  - Equity curve tracking with lightweight-charts
+  - Trade history with P&L calculation
+  - Account reset functionality
+  - localStorage persistence (`quantarmy_paper_account`)
+- **Overview Page** (`/company/overview`)
+  - System-wide dashboard: team status, watchlist, account, system info
+  - 8-role grid with status indicators
+  - Quick action links
+- **Dashboard** (`/company`) — paper trading control center
+  - Total equity, P&L, available funds, position ratio, win rate
+  - Equity curve chart
+  - Tabs: current positions / trade history / team status
+  - Order modal with auto-fill market price
+- **Watchlist System** (`/company/watchlist`)
+  - Star-based toggle (⭐ add/remove)
+  - Search with autocomplete: 38 crypto + 30 HK stocks + 30 A-shares
+  - Market tabs: ₿ Crypto / 🇭🇰 HK / 🇨🇳 A-shares
+  - Keyboard navigation (↑↓ Enter Esc)
+- **Symbol Detail Page** (`/company/watchlist/[symbol]`)
+  - TradingView real-time K-line chart (tv.js widget API)
+  - 8-role analysis cards with structured data
+  - CEO Decision Card: verdict, consensus, action plan
+  - Key Metrics panel: PSAR, EMA, ADX, RSI, risk score
+  - Quick order bar (做多/做空, preset amounts)
+- **24 Default Skill Cards** (3 per role × 8 roles)
+- **Landing Page** — bilingual hero, product flow, role grid
+- **Toast Notification System** — success/error/info, 3.5s auto-dismiss
+- **GitHub Skill Import** (stub) — `/api/skills/import`
 
 ### Changed
-- Role page: backtest button now only shows for strategist role
-- Skill market browse: improved layout with card grouping
-- Watchlist item: symbol text is now a link to detail page
+- Company name: `量化军团` (was `QuantArmy Demo`)
+- Sidebar: Dashboard + Watchlist at top priority
+- TradingView: tv.js widget API (was iframe, was script inject)
+
+### Removed
+- US stock market support (no free real-time API without key)
+- Yahoo Finance for live quotes (replaced by Sina Finance)
+- "停止交易" button from sidebar
+- Priority emoji from watchlist cards
 
 ---
 
 ## [0.1.0-dev] — 2026-03-11
 
+> Initial skeleton and infrastructure.
+
 ### Added
-
-**Frontend**
-- Full TypeScript types, API client, utilities
-- Sidebar, Dashboard, RolePanel, SkillMarket, TradeLog components
-- Company pages: overview, creation wizard, role detail
-- Watchlist system with batch add, priority, analysis display
-
-**Backend**
-- FastAPI app with SQLite async DB
-- Company CRUD, Role management, Skill registry APIs
-- TradingEngine with tick loop pipeline
-- BacktestEngine with walk-forward SL/TP simulation
-- PSAR Trend Following skill (fully implemented)
-- Risk Officer skill (position sizing, drawdown guard)
-- WebSocket manager with per-company rooms
-- Subprocess-based skill sandbox
-
-**Documentation**
-- ARCHITECTURE.md, SKILL_SPEC.md, API_SPEC.md
-- CONTEXT.md, PROJECT_PLAN.md, CHANGELOG.md, README.md
-
-**Deployment**
-- Vercel frontend: `https://frontend-beige-kappa-51.vercel.app`
-- GitHub repo: `https://github.com/kylelinger/quantarmy`
-- Render config: `render.yaml`
-
-### Architecture Decisions
-- SQLite + aiosqlite (zero-config async DB)
-- Subprocess skill isolation (no Docker)
-- Unified `{ ok, data, error }` API response
-- WebSocket rooms per company_id
-- BaseSkill universal interface
+- Project initialized with Next.js 15 + Tailwind CSS 3.4 + shadcn/ui
+- Backend skeleton: FastAPI + SQLite + WebSocket (not deployed)
+- 8-role type system: CEO, CTO, Strategist, Risk Officer, Collector, Executor, Analyst, Researcher
+- PSAR Trend Following skill (builtin)
+- Risk Officer skill (builtin)
+- Backtest engine (walk-forward, SL/TP, Sharpe/drawdown)
+- Frontend deployed to Vercel
+- Backend config for Render (not yet deployed)
+- Documentation: ARCHITECTURE.md, API_SPEC.md, SKILL_SPEC.md, PROJECT_PLAN.md
 
 ---
 
-## [0.0.1] — 2026-03-11
-
-### Added
-- Initial project structure, README, PROJECT_PLAN.md
-
----
-
-## Versioning Policy
-
-- **MAJOR**: Breaking API changes or fundamental architecture changes
-- **MINOR**: New features (new skills, new roles, new pages)
-- **PATCH**: Bug fixes, documentation, minor improvements
-- **-dev**: Work in progress, not released
+## Links
+- **Live**: https://quantarmy.vercel.app
+- **GitHub**: https://github.com/kylelinger/quantarmy

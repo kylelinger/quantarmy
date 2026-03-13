@@ -1,295 +1,224 @@
-# QuantArmy — System Architecture
+# QuantArmy Architecture — v1.0.0
 
-**Version**: 0.1.0 | **Updated**: 2026-03-11
+> Last updated: 2026-03-13
 
----
-
-## Overview
-
-QuantArmy is a web-based AI quantitative trading team simulator. Users assemble an 8-role AI company, assign "skills" (trading strategies, risk models, data pipelines) to each role, and run the team in a fully simulated paper trading environment.
+## System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Browser (User)                           │
-│  ┌──────────────┐  ┌──────────────────────────────────────────┐ │
-│  │   Sidebar    │  │           Main Content Panel              │ │
-│  │  Role List   │  │  Dashboard / Role Config / Skill Market  │ │
-│  │  (8 roles)   │  │                                          │ │
-│  └──────────────┘  └──────────────────────────────────────────┘ │
-│              ↕ REST API + WebSocket                              │
-└─────────────────────────────────────────────────────────────────┘
-                           │
-              ┌────────────▼────────────┐
-              │   FastAPI Backend        │
-              │  ┌───────────────────┐  │
-              │  │  Trading Engine   │  │
-              │  │  (tick loop)      │  │
-              │  └────────┬──────────┘  │
-              │           │             │
-              │  ┌────────▼──────────┐  │
-              │  │  Role Pipeline    │  │
-              │  │ Collector→Strategy│  │
-              │  │ →RiskOfficer→CEO  │  │
-              │  │ →Executor→Analyst │  │
-              │  └────────┬──────────┘  │
-              │           │             │
-              │  ┌────────▼──────────┐  │
-              │  │  Skill Sandbox    │  │
-              │  │  (subprocess iso) │  │
-              │  └───────────────────┘  │
-              │  ┌───────────────────┐  │
-              │  │  SQLite DB        │  │
-              │  └───────────────────┘  │
-              └─────────────────────────┘
-                           │
-              ┌────────────▼────────────┐
-              │  Market Data Sources    │
-              │  Binance REST/WS        │
-              │  Yahoo Finance          │
-              └─────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    Vercel (Frontend)                     │
+│  Next.js 15 + Tailwind 3.4 + TypeScript                │
+│                                                         │
+│  Pages:                                                 │
+│    /                    Landing page                    │
+│    /company/overview    System overview (hub)           │
+│    /company             Paper trading dashboard         │
+│    /company/watchlist   Watchlist management            │
+│    /company/watchlist/  Symbol detail + 8-role analysis │
+│    /company/[role]      Individual role page            │
+│                                                         │
+│  API Routes (serverless):                              │
+│    /api/market/*        Binance + Sina proxy            │
+│    /api/company/*       Demo data (localStorage)        │
+│    /api/skills/*        Skill catalog + import          │
+│                                                         │
+│  Analysis Engine (client-side):                        │
+│    lib/analysis/        8-role computation              │
+│    lib/paper-trading.ts Paper trading engine            │
+│    lib/market-adapter.ts Multi-market adapter           │
+└──────────────┬──────────────────────────────────────────┘
+               │ fetch (server-side proxy)
+               ▼
+┌──────────────────────────┐  ┌──────────────────────────┐
+│   Binance API            │  │   Sina Finance API       │
+│   data-api.binance.vision│  │   hq.sinajs.cn           │
+│   Crypto: real-time      │  │   HK/A-shares: real-time │
+│   Klines, depth, trades  │  │   quotes.sina.cn (klines)│
+└──────────────────────────┘  └──────────────────────────┘
+                              ┌──────────────────────────┐
+                              │   Yahoo Finance          │
+                              │   HK klines (historical) │
+                              └──────────────────────────┘
 ```
 
----
+## Frontend Architecture
 
-## Technology Stack
+### Tech Stack
+- **Framework**: Next.js 15.5 (App Router)
+- **Styling**: Tailwind CSS 3.4.19
+- **Charts**: TradingView Widget (tv.js), lightweight-charts v5
+- **State**: React hooks + localStorage
+- **Language**: TypeScript (strict)
+- **Deploy**: Vercel (serverless)
 
-| Layer | Technology | Rationale |
-|---|---|---|
-| Frontend | Next.js 15 (App Router) | SSR, file-based routing, React 19 |
-| Styling | Tailwind CSS v4 + custom dark theme | Rapid UI, consistent design tokens |
-| UI Components | shadcn/ui (Radix primitives) | Accessible, unstyled base components |
-| Backend | Python FastAPI | Async, typed, high-performance |
-| Database | SQLite + SQLAlchemy async | Zero-config, embeddable, upgradeable to PostgreSQL |
-| Real-time | WebSocket (FastAPI native) | Live trade feed, role logs |
-| Skill Isolation | subprocess (Python) | No Docker dependency; OS-level process isolation |
-| Market Data | Binance Vision API (crypto), Yahoo Finance (stocks) | No auth required |
-
----
-
-## Directory Structure
-
+### Directory Structure
 ```
-quantarmy/
-├── frontend/                  # Next.js application
-│   ├── app/                   # App Router pages
-│   │   ├── layout.tsx         # Root layout
-│   │   ├── page.tsx           # Landing (→ create company or dashboard)
-│   │   └── company/
-│   │       ├── layout.tsx     # Sidebar + TradeLog layout
-│   │       ├── page.tsx       # Dashboard (company overview)
-│   │       ├── new/page.tsx   # Create company wizard
-│   │       ├── [role]/page.tsx # Role config + skill market
-│   │       └── settings/      # Company settings
-│   ├── components/
-│   │   ├── Sidebar/           # Navigation sidebar with role list
-│   │   ├── Dashboard/         # Equity, positions, metrics
-│   │   ├── RolePanel/         # Role detail + parameter editor
-│   │   ├── SkillMarket/       # Browse/import skills
-│   │   └── TradeLog/          # Real-time log panel (bottom strip)
-│   ├── lib/
-│   │   ├── types.ts           # All TypeScript types
-│   │   ├── api.ts             # API client functions
-│   │   └── utils.ts           # cn, formatCurrency, etc.
-│   └── package.json
-│
-├── backend/                   # FastAPI application
-│   ├── main.py                # App entry point
-│   └── app/
-│       ├── core/
-│       │   ├── config.py      # Environment config + constants
-│       │   └── database.py    # SQLAlchemy async setup
-│       ├── models/
-│       │   ├── company.py     # Company, Role, Position, Trade, Message
-│       │   └── skill.py       # Skill, SkillImport
-│       ├── api/
-│       │   ├── company.py     # /api/company CRUD
-│       │   ├── roles.py       # /api/company/{id}/roles
-│       │   ├── skills.py      # /api/skills CRUD + import
-│       │   ├── trading.py     # /api/company/{id}/trading
-│       │   └── market.py      # /api/market data
-│       ├── services/
-│       │   ├── trading_engine.py  # Main tick loop + role pipeline
-│       │   ├── skill_adapter.py   # LLM-powered GitHub → skill adapter
-│       │   └── data_pipeline.py   # Market data fetching
-│       ├── skills/
-│       │   ├── base.py        # BaseSkill + TradeContext + SkillOutput
-│       │   ├── seed.py        # Seeds built-in skills to DB on startup
-│       │   └── builtin/
-│       │       └── psar_trend.py  # PSAR Trend Following (battle-tested)
-│       ├── sandbox/
-│       │   └── runner.py      # Subprocess-based skill executor
-│       └── ws/
-│           ├── manager.py     # WebSocket connection manager
-│           └── router.py      # WS endpoint
-│
-├── data/                      # SQLite database (gitignored)
-├── docs/                      # Documentation
-│   ├── ARCHITECTURE.md        # This file
-│   ├── API_SPEC.md            # Full API reference
-│   ├── SKILL_SPEC.md          # How to write skills
-│   ├── PROJECT_PLAN.md        # Product roadmap
-│   ├── STRATEGY_KB.md         # Trading strategy knowledge base
-│   └── CONTEXT.md             # Session context file
-├── CHANGELOG.md               # Version history
-└── README.md                  # Quick start
+frontend/
+├── app/
+│   ├── page.tsx                          # Landing page
+│   ├── company/
+│   │   ├── overview/page.tsx             # System overview (hub)
+│   │   ├── page.tsx                      # Paper trading dashboard
+│   │   ├── layout.tsx                    # Sidebar layout wrapper
+│   │   ├── watchlist/
+│   │   │   ├── page.tsx                  # Watchlist management
+│   │   │   └── [symbol]/page.tsx         # Symbol detail + analysis
+│   │   ├── [role]/page.tsx               # Individual role page
+│   │   ├── new/page.tsx                  # Company creation
+│   │   └── settings/                     # Settings (stub)
+│   └── api/
+│       ├── market/
+│       │   ├── klines/route.ts           # K-line data (Binance + Sina + Yahoo)
+│       │   ├── ticker24h/route.ts        # 24h ticker (Binance + Sina)
+│       │   ├── depth/route.ts            # Orderbook depth (Binance only)
+│       │   ├── trades/route.ts           # Recent trades (Binance only)
+│       │   └── price/route.ts            # Current price
+│       ├── company/                      # Demo company/role/watchlist APIs
+│       └── skills/                       # Skill catalog + GitHub import
+├── components/
+│   ├── Dashboard/Dashboard.tsx           # Paper trading dashboard
+│   ├── Market/
+│   │   ├── TradingViewChart.tsx           # TradingView K-line widget
+│   │   └── EquityCurve.tsx               # Equity curve (lightweight-charts)
+│   ├── Sidebar/SidebarConnected.tsx       # Main sidebar navigation
+│   ├── Trading/
+│   │   ├── OrderModal.tsx                 # Open position dialog
+│   │   ├── CloseModal.tsx                 # Close position dialog
+│   │   ├── AdjustModal.tsx                # Adjust SL/TP dialog
+│   │   ├── PositionsPanel.tsx             # Current positions table
+│   │   ├── HistoryPanel.tsx               # Trade history table
+│   │   ├── TeamPanel.tsx                  # Team status grid
+│   │   ├── MetricCard.tsx                 # Dashboard metric card
+│   │   └── Toast.tsx                      # Toast notification
+│   ├── TradeLog/PaperTradeLog.tsx         # Bottom trade log bar
+│   ├── RolePanel/RolePanel.tsx            # Role detail panel
+│   └── SkillMarket/SkillMarket.tsx        # Skill marketplace
+└── lib/
+    ├── analysis/                          # 8-Role Analysis Engine
+    │   ├── index.ts                       # runFullAnalysis() entry point
+    │   ├── types.ts                       # AnalysisInput, FullAnalysis types
+    │   ├── indicators.ts                  # Technical indicators (PSAR, EMA, ADX, RSI, MACD, ATR, Bollinger)
+    │   ├── collector.ts                   # Data quality + orderbook analysis
+    │   ├── strategist.ts                  # Technical signal generation
+    │   ├── risk-officer.ts                # Risk scoring + position sizing
+    │   ├── analyst.ts                     # Multi-TF trend + S/R + patterns
+    │   ├── researcher.ts                  # Statistical analysis + beta
+    │   ├── executor.ts                    # Liquidity + slippage estimation
+    │   ├── cto.ts                         # Data audit + anomaly detection
+    │   └── ceo.ts                         # Consensus aggregation + action plan
+    ├── market-adapter.ts                  # Market detection + unified adapter
+    ├── paper-trading.ts                   # Paper trading engine (localStorage)
+    ├── hooks.ts                           # React data hooks
+    ├── types.ts                           # Role/Company type definitions
+    ├── utils.ts                           # Utility functions
+    ├── api.ts                             # API client
+    └── demo-store.ts                      # Demo data (being replaced)
 ```
 
----
-
-## Data Flow: One Trading Tick
+### 8-Role Analysis Pipeline
 
 ```
-Every 60s (configurable):
-
-1. DATA PIPELINE
-   Binance/Yahoo → OHLCV klines for all watched symbols
-
-2. COLLECTOR SKILL
-   Input:  raw price data + news feed
-   Output: InfoSignals (bullish/bearish sentiment, anomalies)
-
-3. STRATEGIST SKILL
-   Input:  OHLCV + InfoSignals
-   Output: TradeSignal (LONG/SHORT/CLOSE/HOLD + size + SL/TP)
-
-4. RISK OFFICER SKILL
-   Input:  TradeSignal + current portfolio state
-   Output: ApprovedOrder (may resize, reject, or tighten SL)
-
-5. CEO SKILL (optional override layer)
-   Input:  ApprovedOrder + company-level risk budget
-   Output: FinalOrder or VETO
-
-6. EXECUTOR SKILL
-   Input:  FinalOrder + current price
-   Output: Fill (simulated execution with slippage model)
-
-7. ANALYST SKILL
-   Input:  Fills + portfolio snapshot
-   Output: Report (logged, stored, broadcasted via WebSocket)
-
-8. WEBSOCKET BROADCAST
-   Client receives: trade event, equity update, role logs
+Market Data (Binance/Sina/Yahoo)
+    │
+    ▼
+┌─────────┐  ┌───────────┐  ┌────────────┐
+│Collector │  │Researcher │  │  Executor  │
+│(data)    │  │(stats)    │  │(liquidity) │
+└────┬─────┘  └─────┬─────┘  └─────┬──────┘
+     │              │              │
+     ▼              ▼              ▼
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│Strategist│  │ Analyst  │  │Risk Ofcr │
+│(signals) │  │(patterns)│  │(risk)    │
+└────┬─────┘  └─────┬────┘  └─────┬────┘
+     │              │              │
+     ▼              ▼              ▼
+┌─────────────────────────────────────┐
+│            CTO (audit)              │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│    CEO (consensus → action plan)    │
+└─────────────────────────────────────┘
 ```
 
----
+Each role runs independently (V1). CEO aggregates all outputs into a final verdict (LONG / SHORT / WAIT) with weighted scoring.
 
-## Skill Interface
+### Data Flow
 
-All skills implement `BaseSkill`:
+1. **User opens symbol detail page**
+2. `runFullAnalysis(symbol)` called
+3. Fetches market data via API routes:
+   - `/api/market/klines` (1h, 4h, 1d timeframes)
+   - `/api/market/depth` (crypto only)
+   - `/api/market/trades` (crypto only)
+   - `/api/market/ticker24h`
+4. Each role processes data independently
+5. CEO aggregates all role outputs
+6. UI renders structured analysis cards
 
-```python
-class MySkill(BaseSkill):
-    name = "My Strategy"
-    version = "1.0.0"
-    role_type = "strategist"
+### Market Data Sources
 
-    async def initialize(self, config: dict) -> None:
-        ...  # Load models, set up state
+| Market | Quotes | Klines | Depth | Trades |
+|--------|--------|--------|-------|--------|
+| Crypto (USDT) | Binance | Binance | Binance | Binance |
+| HK Stocks (.HK) | Sina Finance | Yahoo Finance | — | — |
+| A-Shares (.SS/.SZ) | Sina Finance | Sina JSONP | — | — |
 
-    async def execute(self, ctx: TradeContext) -> SkillOutput:
-        ...  # Your logic here
-        return SkillOutput(action="LONG", size_pct=0.2, reason="Signal triggered")
-```
+**Key API Details:**
+- Binance: `https://data-api.binance.vision` (not api.binance.com, which returns 451)
+- Sina quotes: `https://hq.sinajs.cn/list=...` (GBK encoding, needs `Referer` header)
+- Sina klines: `https://quotes.sina.cn/cn/api/jsonp_v2.php/.../CN_MarketDataService.getKLineData`
+- Yahoo Finance: `https://query1.finance.yahoo.com/v8/finance/chart/`
+- 4h klines: Yahoo doesn't support 4h natively; fetch 1h and aggregate
 
-`TradeContext` provides:
-- Full OHLCV history (200+ candles)
-- Current portfolio state (equity, positions, cash)
-- Signals from other roles (InfoSignals from Collector, RiskParams from Risk Officer)
-- Skill configuration dict
+### Paper Trading
 
-`SkillOutput` specifies:
-- `action`: LONG | SHORT | CLOSE | HOLD
-- `size_pct`: fraction of equity to use
-- `stop_loss_pct`, `take_profit_pct`: optional
-- `reason`: human-readable explanation (logged + displayed)
+- **Engine**: `frontend/lib/paper-trading.ts`
+- **Storage**: localStorage key `quantarmy_paper_account`
+- **Initial capital**: $100,000
+- **Fee**: 0.1% per trade
+- **Operations**: `openPosition()`, `closePosition()`, `adjustPosition()`, `resetAccount()`
+- **Queries**: `getPortfolio()`, `getPortfolioSummary()`, `getTotalEquity()`
 
----
-
-## Role Message Bus
-
-Roles communicate via a typed message protocol stored in the `messages` table:
-
-```
-from_role → to_role : msg_type : payload
-
-Collector  → Strategist  : "signal"  : {type: "news", sentiment: 0.8, ...}
-Strategist → RiskOfficer : "signal"  : {action: "LONG", symbol: "BTCUSDT", ...}
-RiskOfficer→ Executor    : "signal"  : {action: "LONG", size: 0.15, sl: 0.025, ...}
-Executor   → Analyst     : "report"  : {fill: {...}, slippage: 0.001, ...}
-Analyst    → CEO         : "report"  : {daily_pnl: 0.03, drawdown: 0.05, ...}
-```
-
----
-
-## Skill Import Pipeline (GitHub → QuantArmy)
+### Navigation
 
 ```
-User submits GitHub URL
-        ↓
-[1] Clone repo (git clone --depth 1)
-        ↓
-[2] LLM analyzes code:
-    - Identifies strategy type (trend/MR/ML/arbitrage)
-    - Extracts entry/exit logic
-    - Maps signals to QuantArmy conventions
-        ↓
-[3] LLM generates adapter:
-    - Wraps original code with BaseSkill interface
-    - Handles data format conversion
-    - Adds error handling
-        ↓
-[4] Sandbox test:
-    - 30s timeout
-    - Feed test TradeContext
-    - Validate SkillOutput format
-        ↓
-[5] Optional quick backtest:
-    - 30 days of BTC 5m data
-    - Report metrics
-        ↓
-[6] Skill stored in DB → user can equip
+Logo ("量化军团") → /company/overview (hub)
+📊 仪表盘        → /company (paper trading)
+📋 自选标的       → /company/watchlist
+[8 role links]   → /company/[role]
+⚙️ 设置          → /company/settings
 ```
 
----
+## Backend Architecture (Not Yet Deployed)
 
-## Database Schema
+The Python FastAPI backend exists at `backend/` but is not currently deployed. All functionality runs through Next.js API routes (serverless on Vercel).
 
-**companies** — Company config + state  
-**roles** — 8 roles per company, links to active skill  
-**positions** — Open positions  
-**trades** — Trade history  
-**messages** — Role message bus log  
-**skills** — Skill registry (builtin + marketplace + imported)  
-**skill_imports** — Import job tracking  
+### Backend Stack (planned)
+- **Framework**: FastAPI
+- **Database**: SQLite (async, aiosqlite)
+- **Skills**: Subprocess sandbox (30s timeout, 256MB limit)
+- **WebSocket**: Per-company rooms
+- **Deploy target**: Render (free plan)
 
----
+## Deployment
 
-## API Surface
+| Component | Platform | URL |
+|-----------|----------|-----|
+| Frontend | Vercel | https://quantarmy.vercel.app |
+| Backend | Render (planned) | TBD |
+| Code | GitHub | https://github.com/kylelinger/quantarmy |
 
-Base URL: `/api`  
-WebSocket: `ws://localhost:8000/ws/{company_id}`
-
-Key endpoints:
-```
-POST   /api/company                      Create company
-GET    /api/company/{id}                 Get company
-GET    /api/company/{id}/roles           List all roles
-PUT    /api/company/{id}/roles/{type}/skill  Equip a skill
-GET    /api/skills?role_type=strategist  List skills
-POST   /api/skills/import               Import from GitHub
-POST   /api/company/{id}/trading/start  Start trading
-GET    /api/company/{id}/trading/positions  Current positions
-GET    /api/market/symbols              Available symbols
+### Deploy Process
+```bash
+cd frontend
+npm run build        # Verify build passes
+cd ..
+git add -A && git commit -m "<type>: <desc>"
+cd frontend && vercel --prod --yes   # Deploy to Vercel
+cd .. && git push origin main        # Push to GitHub
 ```
 
-Full reference: see `docs/API_SPEC.md`
-
----
-
-## Security & Isolation
-
-- **Skill Sandbox**: skills run in subprocesses, no network access, 30s timeout, 256MB memory cap
-- **No Auth (v0.1)**: single-user, localhost. JWT planned for v0.2
-- **No real funds**: all trading is 100% simulated. No exchange API keys, no real orders
-- **Imported code**: LLM-generated adapter is the only code that runs, not the raw repo code
+Note: `git push` does NOT auto-trigger Vercel deploy. Must run `vercel --prod` explicitly.

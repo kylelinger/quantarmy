@@ -1,346 +1,99 @@
-# 量化军团 — 项目规划文档
+# QuantArmy — Project Plan
 
-> 最后更新: 2026-03-11
+> 量化军团：AI 量化研究团队模拟器
 
----
+## Vision
 
-## 一、产品定义
+QuantArmy is a "productized quant research team" — not auto-trading, but multi-perspective analysis for user decision-making. Users assemble an 8-role AI company that analyzes markets from different angles.
 
-### 1.1 一句话描述
-让普通人通过"雇佣"AI角色，组建自己的量化交易公司，用模拟盘验证交易能力。
+## Roadmap
 
-### 1.2 目标用户
-- **核心用户**: 对交易感兴趣但完全没有编程/量化经验的普通人
-- **次要用户**: 有一定交易经验，想用AI辅助提升的散户
-- 不需要用户写代码，不需要理解技术细节
+### ✅ V1.0 — Independent Analysis (Released 2026-03-12)
 
-### 1.3 核心价值
-- 把"量化交易"从专业壁垒变成人人可用的工具
-- 用户不需要懂策略、编程、风控——选对"人"（Agent）就行
-- 全球开源策略生态，不断有新的skill可以加载
+Each role analyzes independently, CEO aggregates.
 
-### 1.4 覆盖市场
-- 加密货币（Binance公开数据）
-- 股票（Yahoo Finance / 公开API）
+| Feature | Status | Notes |
+|---------|--------|-------|
+| 8-role AI analysis engine | ✅ Done | Client-side, real data |
+| Multi-market data (Crypto/HK/A-shares) | ✅ Done | Binance + Sina, real-time |
+| Paper trading ($100K sim) | ✅ Done | localStorage, long/short |
+| Watchlist + search | ✅ Done | 98 assets, star-toggle |
+| Symbol detail + TradingView chart | ✅ Done | tv.js widget API |
+| Overview page | ✅ Done | System-wide dashboard |
+| Dashboard (trading control) | ✅ Done | Equity curve, positions, history |
+| 24 default skill cards | ✅ Done | 3 per role × 8 |
+| Vercel deployment | ✅ Done | quantarmy.vercel.app |
 
-### 1.5 资金模式
-- **纯模拟盘**，不接入任何真实交易账户
-- 用户获得虚拟资金（如 $100,000），用来验证团队表现
+### 🔄 V1.1 — Polish & Backend (In Progress)
 
----
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Backend deploy (Render) | ⬜ Todo | FastAPI + SQLite |
+| Real-time price updates | ⬜ Todo | WebSocket or polling |
+| Mobile responsiveness | ⬜ Todo | Sidebar 280px blocks mobile |
+| Landing page v2 | ⬜ Todo | Better onboarding |
+| demo-store.ts cleanup | ⬜ Todo | Replace remaining fake data |
+| Type cleanup (hooks.ts) | ⬜ Todo | Remove `any` types |
 
-## 二、产品架构
+### 🔮 V2.0 — Battle Mode (Planned)
 
-### 2.1 页面布局
+Roles engage in structured debate before CEO decides.
 
-```
-┌──────────────────────────────────────────────────┐
-│  顶部导航栏: 公司名称 | 资产概览 | 设置          │
-├────────────┬─────────────────────────────────────┤
-│            │                                     │
-│  左侧看板   │         右侧主面板                  │
-│            │                                     │
-│  ┌────────┐│  ┌─────────────────────────────────┐│
-│  │ CEO    ││  │                                 ││
-│  ├────────┤│  │  当前角色详情                     ││
-│  │ CTO    ││  │  - 当前装备的Agent/Skill          ││
-│  ├────────┤│  │  - 运行状态                       ││
-│  │ 策略师  ││  │  - 性能指标                       ││
-│  ├────────┤│  │  - 更换/升级按钮                   ││
-│  │ 风控官  ││  │                                 ││
-│  ├────────┤│  │  ┌──────────────────────────┐    ││
-│  │ 信息员  ││  │  │ 技能市场 / 开源导入       │    ││
-│  ├────────┤│  │  │ - 推荐Skills              │    ││
-│  │ 交易员  ││  │  │ - GitHub导入              │    ││
-│  ├────────┤│  │  │ - LLM适配状态             │    ││
-│  │ 分析师  ││  │  └──────────────────────────┘    ││
-│  └────────┘│  └─────────────────────────────────┘│
-│            │                                     │
-├────────────┴─────────────────────────────────────┤
-│  底部: 实时交易日志 / 通知流                       │
-└──────────────────────────────────────────────────┘
-```
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Challenge pairs (bull vs bear) | ⬜ Design | See V2_BATTLE_MODE.md |
+| Weighted voting system | ⬜ Design | Confidence-weighted |
+| Battle replay UI | ⬜ Design | Step-by-step visualization |
+| Validity checking | ⬜ Design | CEO validates arguments |
 
-### 2.2 角色体系
+### 🌟 V3.0 — Community (Future)
 
-| 角色 | 职责 | 默认Agent | 可替换 |
-|------|------|-----------|--------|
-| **CEO** | 全局决策、资金分配、团队协调 | 内置AI CEO | ✅ |
-| **CTO** | 系统架构、技术选型、故障处理 | 内置AI CTO | ✅ |
-| **首席策略师** | 制定交易策略、参数优化 | PSAR趋势策略 | ✅ |
-| **风控官** | 仓位管理、止损止盈、回撤控制 | ATR风控模块 | ✅ |
-| **信息采集员** | 新闻监控、社交媒体、链上数据 | RSS+API采集器 | ✅ |
-| **交易执行员** | 订单执行、滑点控制 | 模拟交易引擎 | ✅ |
-| **数据分析师** | 回测、报表、绩效归因 | 内置分析模块 | ✅ |
-| **研究员** | 新策略发现、学术论文解读 | LLM研究助手 | ✅ |
+| Feature | Notes |
+|---------|-------|
+| User auth (JWT) | Multi-user support |
+| Skill marketplace | Community-shared skills |
+| GitHub skill import | Auto-parse + sandbox |
+| Team templates | Pre-built configurations |
+| Leaderboard | Paper trading rankings |
 
-### 2.3 Skill加载机制
+## 8 Roles
 
-```
-用户输入GitHub URL / 关键词搜索
-        ↓
-    平台抓取仓库代码
-        ↓
-    LLM分析: 
-    - 这是什么类型的skill？
-    - 输入/输出接口是什么？
-    - 依赖哪些数据？
-        ↓
-    LLM生成适配层代码（Adapter）
-        ↓
-    沙箱试运行 + 基础回测
-        ↓
-    适配成功 → 挂载到对应角色
-    适配失败 → 告诉用户原因 + 建议替代
-```
+| # | Role | Icon | Responsibility |
+|---|------|------|---------------|
+| 1 | CEO | 👔 | Final decision, consensus aggregation |
+| 2 | CTO | ⚙️ | Data quality audit, anomaly detection |
+| 3 | Strategist | 📈 | Technical signals (PSAR, EMA, ADX, RSI) |
+| 4 | Risk Officer | 🛡 | Risk scoring, position sizing, SL/TP |
+| 5 | Collector | 📡 | Market data collection, orderbook analysis |
+| 6 | Executor | ⚡ | Execution strategy, slippage estimation |
+| 7 | Analyst | 📊 | Multi-TF analysis, S/R, patterns |
+| 8 | Researcher | 🔬 | Statistical analysis, beta, seasonality |
 
----
+## Tech Stack
 
-## 三、技术架构
+| Layer | Technology | Status |
+|-------|-----------|--------|
+| Frontend | Next.js 15 + Tailwind 3.4 + TypeScript | ✅ Deployed |
+| Charts | TradingView (tv.js) + lightweight-charts | ✅ Working |
+| Analysis | Client-side TypeScript engine | ✅ Working |
+| Trading | localStorage paper engine | ✅ Working |
+| Backend | FastAPI + SQLite + aiosqlite | ⬜ Not deployed |
+| Deploy | Vercel (frontend) + Render (backend, planned) | 🔄 Partial |
 
-### 3.1 整体架构
+## Data Sources
 
-```
-┌─────────────────────────────────────────────┐
-│              Frontend (Next.js)             │
-│  - 公司管理面板                               │
-│  - 角色看板                                   │
-│  - Skill市场/导入                             │
-│  - 实时数据展示                               │
-└──────────────────┬──────────────────────────┘
-                   │ REST + WebSocket
-┌──────────────────▼──────────────────────────┐
-│              Backend (FastAPI)               │
-│                                             │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐    │
-│  │ 公司管理  │ │ 角色引擎  │ │ Skill    │    │
-│  │ Service  │ │ Service  │ │ Adapter  │    │
-│  └──────────┘ └──────────┘ └──────────┘    │
-│                                             │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐    │
-│  │ 模拟交易  │ │ 数据管道  │ │ LLM      │    │
-│  │ Engine   │ │ Pipeline │ │ Gateway  │    │
-│  └──────────┘ └──────────┘ └──────────┘    │
-│                                             │
-│  ┌──────────────────────────────────────┐   │
-│  │         Sandbox Runtime              │   │
-│  │  (Docker容器 / 进程隔离)              │   │
-│  │  - 每个Skill在独立沙箱运行            │   │
-│  │  - 只能通过标准接口通信               │   │
-│  └──────────────────────────────────────┘   │
-└──────────────────┬──────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────┐
-│              Data Layer                     │
-│  SQLite (用户/公司数据)                       │
-│  Redis (实时状态/缓存)                        │
-│  文件系统 (Skill代码/回测数据)                 │
-└─────────────────────────────────────────────┘
-```
+| Market | Source | Real-time | API Key |
+|--------|--------|-----------|---------|
+| Crypto | Binance (`data-api.binance.vision`) | ✅ | None |
+| HK Stocks | Sina Finance (`hq.sinajs.cn`) | ✅ | None |
+| A-Shares | Sina Finance (`hq.sinajs.cn`) | ✅ | None |
+| HK Klines | Yahoo Finance | Historical | None |
 
-### 3.2 目录结构
+## Conventions
 
-```
-quantarmy/
-├── docs/                    # 项目文档
-│   ├── PROJECT_PLAN.md      # 本文件
-│   ├── API_SPEC.md          # API规范
-│   └── SKILL_SPEC.md        # Skill接口规范
-├── frontend/                # Next.js前端
-│   ├── app/                 # App Router
-│   │   ├── layout.tsx
-│   │   ├── page.tsx         # 首页/登录
-│   │   └── company/         # 公司管理页
-│   │       ├── layout.tsx   # 左侧看板+右侧面板布局
-│   │       ├── page.tsx     # 公司概览
-│   │       └── [role]/      # 动态路由: 各角色页
-│   │           └── page.tsx
-│   ├── components/
-│   │   ├── Sidebar/         # 左侧角色看板
-│   │   ├── RolePanel/       # 右侧角色详情
-│   │   ├── SkillMarket/     # 技能市场
-│   │   ├── TradeLog/        # 交易日志
-│   │   └── Dashboard/       # 资产概览
-│   ├── lib/                 # 工具函数
-│   └── styles/
-├── backend/                 # Python FastAPI后端
-│   ├── app/
-│   │   ├── main.py          # FastAPI入口
-│   │   ├── api/             # API路由
-│   │   │   ├── company.py   # 公司管理
-│   │   │   ├── roles.py     # 角色管理
-│   │   │   ├── skills.py    # Skill管理
-│   │   │   ├── trading.py   # 模拟交易
-│   │   │   └── market.py    # 行情数据
-│   │   ├── core/
-│   │   │   ├── config.py
-│   │   │   ├── database.py
-│   │   │   └── security.py
-│   │   ├── models/          # 数据模型
-│   │   │   ├── company.py
-│   │   │   ├── role.py
-│   │   │   └── skill.py
-│   │   ├── services/        # 业务逻辑
-│   │   │   ├── company_service.py
-│   │   │   ├── role_engine.py
-│   │   │   ├── skill_adapter.py   # LLM适配引擎
-│   │   │   ├── trading_engine.py  # 模拟交易引擎
-│   │   │   └── data_pipeline.py   # 行情数据管道
-│   │   ├── sandbox/         # 沙箱运行时
-│   │   │   ├── runner.py
-│   │   │   └── interfaces.py     # 标准接口定义
-│   │   └── skills/          # 内置Skills
-│   │       ├── builtin/     # 默认自带的
-│   │       └── imported/    # 用户导入的
-│   ├── tests/
-│   └── requirements.txt
-├── shared/                  # 前后端共享类型
-│   └── types/
-├── .gitignore
-└── README.md
-```
-
-### 3.3 关键技术决策
-
-| 决策 | 选择 | 理由 |
-|------|------|------|
-| 前端框架 | Next.js 14+ App Router | SSR + 路由简洁，适合面板类产品 |
-| CSS方案 | Tailwind + shadcn/ui | 快速出UI，组件质量高 |
-| 后端框架 | FastAPI | Python生态量化库丰富，异步性能好 |
-| 数据库 | SQLite → PostgreSQL | 初期简单，后期可迁移 |
-| 实时通信 | WebSocket | 交易日志/行情需要实时推送 |
-| Skill沙箱 | 进程隔离(subprocess) | 初期不上Docker，简化部署 |
-| LLM | 通过API调用 | 不自建模型，用现有服务 |
-
----
-
-## 四、Skill接口规范（核心设计）
-
-### 4.1 统一接口
-
-每个Skill必须实现标准接口，无论来源：
-
-```python
-class BaseSkill:
-    """所有Skill的基类"""
-    
-    # 元数据
-    name: str               # 技能名称
-    role: str               # 适用角色 (strategist/risk/collector/...)
-    version: str            # 版本号
-    description: str        # 描述
-    source: str             # 来源 (builtin/github/custom)
-    
-    async def initialize(self, config: dict) -> None:
-        """初始化，接收配置"""
-        
-    async def execute(self, context: TradeContext) -> SkillOutput:
-        """核心执行方法"""
-        
-    async def backtest(self, historical_data: DataFrame) -> BacktestResult:
-        """回测方法"""
-        
-    def get_parameters(self) -> list[Parameter]:
-        """返回可调参数列表（供用户在UI上调整）"""
-```
-
-### 4.2 TradeContext（统一上下文）
-
-```python
-@dataclass
-class TradeContext:
-    timestamp: datetime
-    portfolio: Portfolio          # 当前持仓
-    market_data: MarketData       # 行情数据
-    signals: dict[str, Signal]    # 其他角色产生的信号
-    news: list[NewsItem]          # 新闻/事件
-    config: dict                  # 用户配置
-```
-
-### 4.3 角色间通信
-
-```
-信息采集员 ──(NewsSignal)──→ 策略师
-策略师 ────(TradeSignal)──→ 风控官
-风控官 ────(ApprovedOrder)→ 交易执行员
-交易执行员 ─(FillReport)──→ 数据分析师
-数据分析师 ─(Report)──────→ CEO
-CEO ───────(Decision)─────→ 策略师（调整方向）
-```
-
-每个角色只通过标准消息传递通信，不直接调用其他角色的方法。
-
----
-
-## 五、数据流
-
-### 5.1 行情数据
-
-```
-交易所公开API (Binance/Yahoo Finance)
-        ↓
-    数据管道 (Data Pipeline)
-        ↓
-    标准化格式 (OHLCV + 深度)
-        ↓
-    分发给各角色
-```
-
-### 5.2 交易流程
-
-```
-1. 信息采集员 → 收集新闻/链上数据/社交信号
-2. 策略师 → 根据行情+信息生成交易信号
-3. 风控官 → 审核信号，调整仓位，设止损
-4. CEO → 最终批准（可配置自动批准）
-5. 交易执行员 → 在模拟盘执行
-6. 数据分析师 → 记录、归因、出报表
-```
-
----
-
-## 六、开发路线
-
-### Phase 1: 骨架搭建（Week 1-2）
-- [ ] 前端基础布局（看板+面板）
-- [ ] 后端API骨架
-- [ ] 数据库模型
-- [ ] 内置3个默认Skill（策略/风控/采集）
-- [ ] 模拟交易引擎（纸盘）
-- [ ] 基础行情数据接入
-
-### Phase 2: 核心功能（Week 3-4）
-- [ ] Skill加载机制（GitHub URL导入）
-- [ ] LLM适配引擎
-- [ ] 角色间消息通信
-- [ ] 实时交易日志
-- [ ] 基础回测功能
-- [ ] 用户公司创建/管理
-
-### Phase 3: 体验打磨（Week 5-6）
-- [ ] 技能市场UI
-- [ ] 性能报表/可视化
-- [ ] 角色参数调优界面
-- [ ] 多公司对比
-- [ ] 引导教程（新手向）
-
-### Phase 4: 生态建设（Week 7+）
-- [ ] 社区Skill分享
-- [ ] Skill评分/评价系统
-- [ ] 策略排行榜
-- [ ] 多语言支持
-
----
-
-## 七、风险与应对
-
-| 风险 | 影响 | 应对 |
-|------|------|------|
-| LLM适配成功率低 | 用户体验差 | 优先做好内置Skill，适配失败时推荐替代 |
-| 开源代码质量参差 | 运行不稳定 | 沙箱隔离 + 超时机制 + 健康检查 |
-| 行情API限流 | 数据断流 | 缓存层 + 多数据源冗余 |
-| 用户不理解"角色"概念 | 留存低 | 新手引导 + 一键模板("保守型"/"激进型") |
-
----
-
-*文档版本: v0.1 | 作者: CTO崔导师 | 审核: CEO tutu*
+- **Git commits**: `<type>: <description>` (feat/fix/docs/refactor/chore)
+- **Branching**: main / dev / feature/xxx / fix/xxx
+- **Versioning**: SemVer
+- **Deploy**: `npm run build` → `git commit` → `vercel --prod --yes` → `git push`
+- **Naming**: English (files, variables, components)
+- **No real money**: All trading is simulated
