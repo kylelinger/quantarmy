@@ -75,7 +75,7 @@ export default function LandingPage() {
           <FeatureCard icon="🔌" title="技能可扩展" desc="3 张默认卡上手，熟悉后可从 GitHub 导入开源策略。" />
           <FeatureCard icon="⚡" title="多角度分析" desc="同一标的，8 个角色各抒己见，让分歧变成决策优势。" />
           <FeatureCard icon="🎯" title="用户为中心" desc="系统不自动交易，你看分析，你做决策，你掌控一切。" />
-          <FeatureCard icon="⚔️" title="V2 辩论引擎" desc="角色之间真实辩论，挑战 + 反驳 + 让步，CEO 聚合加权共识。" />
+          <FeatureCard icon="⚔️" title="辩论引擎" desc="角色之间真实辩论，挑战 + 反驳 + 让步，CEO 聚合加权共识。" />
         </div>
       </section>
 

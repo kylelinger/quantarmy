@@ -6,9 +6,9 @@ Format: [SemVer](https://semver.org/) · Types: Added, Changed, Fixed, Removed
 
 ---
 
-## [1.1.0-dev] — 2026-03-13
+## [2.0.0] — 2026-03-13
 
-> V2 symbol detail page integration: live multi-agent analysis, debate visualization, and tabbed explainability UI.
+> 统一版本号为 v2.0 — 辩论引擎 + 产品 UX 大改版。不再区分"V1/V2引擎"和"产品版本"。
 
 ### Added
 - **V2 Symbol Detail Page** (`frontend/app/company/watchlist/[symbol]/page.tsx`)

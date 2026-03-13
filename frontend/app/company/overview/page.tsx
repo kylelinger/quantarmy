@@ -42,7 +42,7 @@ export default function OverviewPage() {
       {/* Hero Header */}
       <div>
         <h1 className="text-3xl font-bold text-dark-100">量化军团总览</h1>
-        <p className="text-dark-400 mt-2">QuantArmy v1.1 — 8 角色辩论引擎，多视角量化分析</p>
+        <p className="text-dark-400 mt-2">QuantArmy v2.0 — 8 角色辩论引擎，多视角量化分析</p>
       </div>
 
       {/* Status Cards Row */}
@@ -238,10 +238,10 @@ export default function OverviewPage() {
           <div className="bg-dark-900 rounded-xl border border-dark-800 p-6">
             <h2 className="text-lg font-semibold text-dark-100 mb-4">ℹ️ 系统信息</h2>
             <div className="space-y-2 text-sm">
-              <InfoRow label="版本" value="v1.1.0-dev" />
+              <InfoRow label="版本" value="v2.0.0" />
               <InfoRow label="数据源" value="Binance · 新浪财经" />
               <InfoRow label="市场" value="加密 · 港股 · A股" />
-              <InfoRow label="分析模式" value="V2 辩论引擎" />
+              <InfoRow label="分析模式" value="辩论引擎" />
               <InfoRow label="交易" value="纯模拟 · 非实盘" />
             </div>
           </div>

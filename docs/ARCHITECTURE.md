@@ -1,4 +1,4 @@
-# QuantArmy Architecture — v1.0.0
+# QuantArmy Architecture — v2.0
 
 > Last updated: 2026-03-13
 

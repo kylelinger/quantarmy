@@ -35,7 +35,7 @@ export function SidebarConnected() {
       <div className="p-5 border-b border-dark-800">
         <Link href="/company/overview" className="block">
           <h2 className="text-lg font-bold text-dark-100 truncate">{company?.name ?? '量化军团'}</h2>
-          <p className="text-xs text-dark-500 mt-1">QuantArmy v1.1</p>
+          <p className="text-xs text-dark-500 mt-1">QuantArmy v2.0</p>
         </Link>
       </div>
 
