@@ -6,6 +6,41 @@ Format: [SemVer](https://semver.org/) · Types: Added, Changed, Fixed, Removed
 
 ---
 
+## [1.1.0-dev] — 2026-03-13
+
+> V2 symbol detail page integration: live multi-agent analysis, debate visualization, and tabbed explainability UI.
+
+### Added
+- **V2 Symbol Detail Page** (`frontend/app/company/watchlist/[symbol]/page.tsx`)
+  - Replaced V1 demo analysis with live **`runV2Analysis()`** output
+  - Added 5-phase analysis progress UI: collecting / analyzing / debating / deciding / storing
+  - Added CEO decision card powered by V2 result types
+  - Added 7 non-CEO role cards with reasoning expansion and debate linkage
+- **Debate Visualization in Detail Page**
+  - Added independent `⚔️ 辩论记录` tab below the K-line chart
+  - Added debate stat cards: rounds / challenges / concessions / holds
+  - Added round-by-round challenge / rebuttal timeline
+  - Added stance-before/after comparison to show which roles changed view
+- **Agent Memory View**
+  - Added independent `🧬 Agent 记忆` tab below the K-line chart
+  - Wired to localStorage memory via `getAgentMemory(role)`
+  - Shows recent per-role historical records
+- **Tabbed Explainability Layout**
+  - Added tab structure below chart: `🧠 团队分析 | ⚔️ 辩论记录 | 🧬 Agent 记忆`
+
+### Changed
+- Symbol detail page now uses the **V2 analysis pipeline** instead of V1 `runFullAnalysis`
+- Debate display moved from right-side compact panel to a **full-width dedicated tab**
+- Detail page layout now keeps **K-line + CEO decision** on top and moves analysis/debate/memory into tabs below
+- `detectMarket()` now supports `us_stock` for pure-letter U.S. tickers
+
+### Fixed
+- Fixed type mismatch on detail page debate prop:
+  - `DebateTranscript | null | undefined` → `DebateTranscript | null`
+  - Applied fix: `debate={debate || null}`
+
+---
+
 ## [1.0.0] — 2026-03-12
 
 > 🎉 First stable release. 8-role AI analysis on real market data, paper trading, 3-market coverage.

@@ -5,6 +5,78 @@
 
 ---
 
+## 2026-03-13 — V2 Symbol Detail Page + Debate Tabs
+
+**Milestone: Symbol detail page upgraded from V1 demo analysis to live V2 multi-agent output.**
+
+### What shipped:
+- Symbol detail page now runs **`runV2Analysis(symbol, onProgress)`** instead of V1 `runFullAnalysis`
+- Added **5-phase progress flow**
+  - collecting
+  - analyzing
+  - debating
+  - deciding
+  - storing
+- Added **CEO decision card** driven by V2 output
+  - verdict
+  - confidence
+  - consensus score
+  - bullish/bearish/neutral vote counts
+  - entry / stop loss / take profit
+  - dissent / invalidation
+- Added **7 non-CEO agent cards** with:
+  - stance / direction / confidence
+  - skill summaries
+  - expandable reasoning
+  - related debate entries
+  - revised-view marker after concession
+- Added **debate visualization into the detail page**
+  - initial version: right-side collapsible panel
+  - final version chosen by CEO: **independent tabs below the K-line chart**
+- Added **detail page tab structure** below chart:
+  - `🧠 团队分析`
+  - `⚔️ 辩论记录`
+  - `🧬 Agent 记忆`
+- Added **full-width debate tab** with:
+  - debate stat cards
+  - before/after stance comparison
+  - round-by-round challenge / rebuttal timeline
+- Added **Agent memory tab** using localStorage-backed `getAgentMemory(role)`
+- `detectMarket()` now supports **`us_stock`** for pure-letter tickers
+
+### Architecture decisions:
+- V2.0 debate remains **rule-based only** (no LLM dependency)
+- Memory persistence remains **localStorage**, capped at **200 records per agent**
+- CEO does **not** debate; CEO aggregates weighted consensus only
+- CTO may challenge any role and can veto when data quality `< 50`
+- Concession reduces challenged agent confidence by **25%**
+- Symbol detail page now serves as the main **V2 explainability surface**
+
+### Deployment / verification:
+- Commit `a04f318` — live V2 engine wired into symbol detail page
+- Commit `a743bca` — detail page refactored to tabbed layout under K-line chart
+- Production alias verified:
+  - `https://frontend-beige-kappa-51.vercel.app/company/watchlist/BTCUSDT`
+- Verified visible tabs:
+  - 团队分析
+  - 辩论记录
+  - Agent 记忆
+
+### Key files:
+- `frontend/app/company/watchlist/[symbol]/page.tsx`
+- `frontend/lib/v2/orchestrator.ts`
+- `frontend/lib/v2/types.ts`
+- `frontend/lib/v2/debate/engine.ts`
+- `frontend/lib/v2/memory/store.ts`
+- `frontend/lib/market-adapter.ts`
+
+### What's next:
+- Optionally verify V2 detail page on more symbols / markets
+- Consider whether a default-open debate tab is better UX
+- Keep docs aligned with V2 reality
+
+---
+
 ## 2026-03-12 — v1.0.0 Release
 
 **Milestone: First stable release with real market data + 8-role analysis.**
