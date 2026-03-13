@@ -14,6 +14,9 @@ import { runV2Analysis, type ProgressCallback } from '@/lib/v2/orchestrator'
 import type { V2AnalysisResult, AgentOutput, CEODecision, DebateTranscript, AnalysisPhase, RoleType } from '@/lib/v2/types'
 import { getAgentMemory } from '@/lib/v2/memory/store'
 import { saveV2Result } from '@/lib/v2/cache'
+import { PipelineProgress } from '@/components/Analysis/PipelineProgress'
+import { ResearchReport } from '@/components/Analysis/ResearchReport'
+import { AgentQA } from '@/components/Analysis/AgentQA'
 
 type TabType = 'analysis' | 'debate' | 'memory'
 
@@ -140,22 +143,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
 
       {/* ── Progress Bar ──────────────────────────────────── */}
       {analyzing && phase && (
-        <div className="bg-dark-900 rounded-xl border border-dark-800 p-5">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="animate-pulse text-2xl">🧠</div>
-            <div className="flex-1">
-              <p className="text-dark-200 font-medium">{PHASE_LABELS[phase]}</p>
-              <div className="mt-2 flex gap-1">
-                {(['collecting', 'analyzing', 'debating', 'deciding', 'storing'] as AnalysisPhase[]).map(p => {
-                  const phases: AnalysisPhase[] = ['collecting', 'analyzing', 'debating', 'deciding', 'storing']
-                  const current = phases.indexOf(phase)
-                  const idx = phases.indexOf(p)
-                  return <div key={p} className={cn('h-1.5 flex-1 rounded-full transition-colors', idx <= current ? 'bg-army-500' : 'bg-dark-700')} />
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
+        <PipelineProgress currentPhase={phase} />
       )}
 
       {/* ── Chart + CEO Sidebar ───────────────────────────── */}
@@ -181,7 +169,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
 
           {decision ? (
             <>
-              <CEODecisionCard decision={decision} />
+              <CEODecisionCard decision={decision} fullResult={result} />
               {result?.timing?.totalMs && (
                 <div className="flex items-center justify-between text-dark-600 text-xs px-1">
                   <span>总耗时 {result.timing.totalMs}ms</span>
@@ -469,7 +457,9 @@ function MemoryTab() {
 // CEO Decision Card
 // ============================================================
 
-function CEODecisionCard({ decision }: { decision: CEODecision }) {
+function CEODecisionCard({ decision, fullResult }: { decision: CEODecision; fullResult?: V2AnalysisResult | null }) {
+  const [showReport, setShowReport] = useState(false)
+
   return (
     <div className="bg-dark-900 rounded-xl border border-dark-800 p-5">
       <div className="flex items-center gap-2 mb-3">
@@ -520,7 +510,31 @@ function CEODecisionCard({ decision }: { decision: CEODecision }) {
             {decision.invalidation.slice(0, 3).map((c, i) => <p key={i} className="text-dark-400 text-xs mt-1">❌ {c}</p>)}
           </div>
         )}
+
+        {/* Research Report Toggle */}
+        {fullResult && (
+          <div className="pt-3 border-t border-dark-800">
+            <button
+              onClick={() => setShowReport(!showReport)}
+              className={cn(
+                'w-full py-2.5 rounded-lg text-sm font-medium transition-colors',
+                showReport
+                  ? 'bg-army-900/30 text-army-400 border border-army-700'
+                  : 'bg-dark-850 text-dark-300 hover:bg-dark-800 border border-dark-700'
+              )}
+            >
+              {showReport ? '📋 收起研报' : '📋 查看研报'}
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Research Report */}
+      {showReport && fullResult && (
+        <div className="mt-4 pt-4 border-t border-dark-800">
+          <ResearchReport result={fullResult} />
+        </div>
+      )}
     </div>
   )
 }
@@ -596,6 +610,7 @@ function AgentCard({ role, output, debate }: {
   debate: DebateTranscript | null
 }) {
   const [expanded, setExpanded] = useState(false)
+  const [showQA, setShowQA] = useState(false)
   const relevantChallenges = debate?.rounds.flatMap(r =>
     r.challenges.filter(c => c.from === output.role || c.to === output.role).map(c => ({
       ...c, rebuttal: r.rebuttals.find(rb => rb.challengeId === c.id),
@@ -634,11 +649,24 @@ function AgentCard({ role, output, debate }: {
         ))}
       </div>
 
-      {(output.reasoning.length > 0 || relevantChallenges.length > 0) && (
-        <button onClick={() => setExpanded(!expanded)} className="text-dark-500 text-xs hover:text-dark-300 transition-colors">
-          {expanded ? '收起' : `展开 (${output.reasoning.length}条推理${relevantChallenges.length > 0 ? ` + ${relevantChallenges.length}场辩论` : ''})`}
+      <div className="flex items-center gap-2">
+        {(output.reasoning.length > 0 || relevantChallenges.length > 0) && (
+          <button onClick={() => setExpanded(!expanded)} className="text-dark-500 text-xs hover:text-dark-300 transition-colors">
+            {expanded ? '收起' : `展开 (${output.reasoning.length}条推理${relevantChallenges.length > 0 ? ` + ${relevantChallenges.length}场辩论` : ''})`}
+          </button>
+        )}
+        <button
+          onClick={() => setShowQA(!showQA)}
+          className={cn(
+            'ml-auto px-2.5 py-1 rounded text-xs transition-colors',
+            showQA
+              ? 'bg-army-900/30 text-army-400'
+              : 'bg-dark-850 text-dark-500 hover:text-dark-300'
+          )}
+        >
+          💬 {showQA ? '收起' : '追问'}
         </button>
-      )}
+      </div>
 
       {expanded && (
         <div className="mt-3 space-y-2">
@@ -670,6 +698,9 @@ function AgentCard({ role, output, debate }: {
           )}
         </div>
       )}
+
+      {/* Agent Q&A */}
+      {showQA && <AgentQA agent={output} />}
     </div>
   )
 }
