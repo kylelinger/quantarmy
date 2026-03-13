@@ -41,6 +41,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
   const [orderSide, setOrderSide] = useState<'long' | 'short'>('long')
   const [orderMsg, setOrderMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [activeTab, setActiveTab] = useState<TabType>('debate')
+  const [showReport, setShowReport] = useState(false)
 
   // V2 analysis state
   const [result, setResult] = useState<V2AnalysisResult | null>(null)
@@ -169,7 +170,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
 
           {decision ? (
             <>
-              <CEODecisionCard decision={decision} fullResult={result} />
+              <CEODecisionCard decision={decision} fullResult={result} showReport={showReport} onToggleReport={() => setShowReport(!showReport)} />
               {result?.timing?.totalMs && (
                 <div className="flex items-center justify-between text-dark-600 text-xs px-1">
                   <span>总耗时 {result.timing.totalMs}ms</span>
@@ -191,6 +192,17 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
           ) : null}
         </div>
       </div>
+
+      {/* ── Research Report (full width) ─────────────────── */}
+      {showReport && result && (
+        <div className="bg-dark-900 rounded-xl border border-dark-800 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-dark-100 flex items-center gap-2">📋 CEO 研究报告</h2>
+            <button onClick={() => setShowReport(false)} className="text-dark-500 hover:text-dark-300 text-sm">✕ 收起</button>
+          </div>
+          <ResearchReport result={result} />
+        </div>
+      )}
 
       {/* ── Tab Bar ────────────────────────────────────────── */}
       {result && (
@@ -457,8 +469,7 @@ function MemoryTab() {
 // CEO Decision Card
 // ============================================================
 
-function CEODecisionCard({ decision, fullResult }: { decision: CEODecision; fullResult?: V2AnalysisResult | null }) {
-  const [showReport, setShowReport] = useState(false)
+function CEODecisionCard({ decision, fullResult, showReport, onToggleReport }: { decision: CEODecision; fullResult?: V2AnalysisResult | null; showReport?: boolean; onToggleReport?: () => void }) {
 
   return (
     <div className="bg-dark-900 rounded-xl border border-dark-800 p-5">
@@ -512,10 +523,10 @@ function CEODecisionCard({ decision, fullResult }: { decision: CEODecision; full
         )}
 
         {/* Research Report Toggle */}
-        {fullResult && (
+        {fullResult && onToggleReport && (
           <div className="pt-3 border-t border-dark-800">
             <button
-              onClick={() => setShowReport(!showReport)}
+              onClick={onToggleReport}
               className={cn(
                 'w-full py-2.5 rounded-lg text-sm font-medium transition-colors',
                 showReport
@@ -528,13 +539,6 @@ function CEODecisionCard({ decision, fullResult }: { decision: CEODecision; full
           </div>
         )}
       </div>
-
-      {/* Research Report */}
-      {showReport && fullResult && (
-        <div className="mt-4 pt-4 border-t border-dark-800">
-          <ResearchReport result={fullResult} />
-        </div>
-      )}
     </div>
   )
 }
