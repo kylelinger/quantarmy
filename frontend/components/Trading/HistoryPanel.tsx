@@ -7,6 +7,7 @@ export function HistoryPanel({ trades }: { trades: PaperTrade[] }) {
       <div className="bg-dark-900 rounded-xl border border-dark-800 p-12 text-center">
         <p className="text-4xl mb-3">📜</p>
         <p className="text-dark-300 text-lg">暂无交易记录</p>
+        <p className="text-dark-500 text-sm mt-1">去模拟盘下单试试 📝</p>
       </div>
     )
   }

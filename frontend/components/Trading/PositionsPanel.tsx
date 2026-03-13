@@ -16,7 +16,11 @@ export function PositionsPanel({
       <div className="bg-dark-900 rounded-xl border border-dark-800 p-12 text-center">
         <p className="text-4xl mb-3">📦</p>
         <p className="text-dark-300 text-lg">暂无持仓</p>
-        <p className="text-dark-500 text-sm mt-1">点击"模拟下单"开始建仓</p>
+        <p className="text-dark-500 text-sm mt-1 mb-4">先让团队分析标的，看到好机会再模拟下单</p>
+        <div className="flex gap-3 justify-center">
+          <a href="/company/watchlist" className="px-4 py-2 bg-army-900/30 text-army-400 hover:bg-army-900/50 text-sm rounded-lg transition-colors border border-army-800/30">📋 去自选标的</a>
+          <a href="/company/overview" className="px-4 py-2 text-dark-400 hover:text-dark-200 text-sm rounded-lg transition-colors border border-dark-700 hover:border-dark-600">📊 查看团队观点</a>
+        </div>
       </div>
     )
   }

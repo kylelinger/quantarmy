@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCompanyContext } from '@/lib/CompanyContext'
-import { useWatchlist, addToWatchlist, removeFromWatchlist, updateWatchlistItem, requestAnalysis, batchAddWatchlist } from '@/lib/hooks'
+import { useWatchlist, addToWatchlist, removeFromWatchlist, batchAddWatchlist } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
-import { ROLES } from '@/lib/types'
+import { getV2Result, type V2CachedSummary } from '@/lib/v2/cache'
 
 // Full searchable symbol database
 const ALL_CRYPTO = [
@@ -116,29 +116,33 @@ const ALL_A_SHARES = [
   { symbol: '002049.SZ', name: 'Unigroup Guoxin', aliases: ['紫光国微'] },
 ]
 
-// Popular picks per market
 const CRYPTO_POPULAR = ALL_CRYPTO.slice(0, 5)
 const HK_POPULAR = ALL_HK_STOCKS.slice(0, 5)
 const A_POPULAR = ALL_A_SHARES.slice(0, 5)
 
-const PRIORITY_LABELS: Record<number, { label: string; color: string; icon: string }> = {
-  0: { label: '普通', color: 'text-dark-500', icon: '' },
-  1: { label: '重点', color: 'text-yellow-500', icon: '⭐' },
-  2: { label: '核心', color: 'text-red-400', icon: '🔥' },
-}
-
 export default function WatchlistPage() {
   const router = useRouter()
-  const { companyId, company } = useCompanyContext()
+  const { companyId } = useCompanyContext()
   const { items, loading, refresh } = useWatchlist(companyId)
   const [searchQuery, setSearchQuery] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [highlightIdx, setHighlightIdx] = useState(-1)
   const [selectedMarket, setSelectedMarket] = useState<'crypto' | 'hk_stock' | 'a_share'>('crypto')
-  const [expandedItem, setExpandedItem] = useState<string | null>(null)
-  const [analyzing, setAnalyzing] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [v2Cache, setV2Cache] = useState<Record<string, V2CachedSummary>>({})
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+    // Load V2 cached results for all watchlist items
+    const cache: Record<string, V2CachedSummary> = {}
+    for (const item of items) {
+      const c = getV2Result(item.symbol)
+      if (c) cache[item.symbol] = c
+    }
+    setV2Cache(cache)
+  }, [items])
 
   const existingSymbols = new Set(items.map((i: any) => i.symbol))
   const allSymbols = selectedMarket === 'crypto' ? ALL_CRYPTO
@@ -151,7 +155,6 @@ export default function WatchlistPage() {
     : selectedMarket === 'hk_stock' ? '港股'
     : 'A股'
 
-  // Filter search results
   const searchResults = searchQuery.trim().length > 0
     ? allSymbols.filter(s => {
         const q = searchQuery.toUpperCase()
@@ -161,7 +164,6 @@ export default function WatchlistPage() {
       }).slice(0, 10)
     : []
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -184,10 +186,8 @@ export default function WatchlistPage() {
 
   const handleSelectResult = async (item: typeof allSymbols[0]) => {
     if (existingSymbols.has(item.symbol)) {
-      // Already added — navigate to detail
       router.push(`/company/watchlist/${encodeURIComponent(item.symbol)}`)
     } else {
-      // Add then navigate
       await handleAdd(item.symbol, item.name)
       router.push(`/company/watchlist/${encodeURIComponent(item.symbol)}`)
     }
@@ -199,7 +199,6 @@ export default function WatchlistPage() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!showDropdown || searchResults.length === 0) {
       if (e.key === 'Enter' && searchQuery.trim()) {
-        // Direct add if no results match
         handleAdd(searchQuery.trim().toUpperCase(), searchQuery.trim().toUpperCase())
         setSearchQuery('')
       }
@@ -226,31 +225,17 @@ export default function WatchlistPage() {
     await refresh()
   }
 
-  const handlePriority = async (itemId: string, priority: number) => {
-    if (!companyId) return
-    await updateWatchlistItem(companyId, itemId, { priority })
-    await refresh()
+  const verdictColors: Record<string, string> = {
+    LONG: 'bg-army-900/30 text-army-400 border-army-800/30',
+    SHORT: 'bg-red-900/30 text-red-400 border-red-800/30',
+    HOLD: 'bg-dark-800 text-dark-400 border-dark-700',
+    WAIT: 'bg-dark-800 text-dark-500 border-dark-700',
   }
-
-  const handleAnalyze = async (itemId: string) => {
-    if (!companyId) return
-    setAnalyzing(itemId)
-    try {
-      await requestAnalysis(companyId, itemId)
-      await refresh()
-    } finally {
-      setAnalyzing(null)
-    }
-  }
-
-  const handleBatchAdd = async () => {
-    if (!companyId) return
-    const toAdd = suggestions
-      .filter(s => !existingSymbols.has(s.symbol))
-      .map(s => ({ symbol: s.symbol, display_name: s.name, market: selectedMarket }))
-    if (toAdd.length === 0) return
-    await batchAddWatchlist(companyId, toAdd)
-    await refresh()
+  const verdictLabels: Record<string, string> = {
+    LONG: '🟢 做多',
+    SHORT: '🔴 做空',
+    HOLD: '⚪ 持有',
+    WAIT: '⏸️ 等待',
   }
 
   return (
@@ -287,14 +272,14 @@ export default function WatchlistPage() {
           </div>
         </div>
 
-        {/* Search with autocomplete dropdown */}
+        {/* Search */}
         <div ref={searchRef} className="relative mb-4">
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-500">🔍</span>
             <input
               ref={inputRef}
               type="text"
-              placeholder={`搜索${marketLabel}... ${selectedMarket === 'crypto' ? 'BTC、比特币' : selectedMarket === 'hk_stock' ? '0700、腾讯' : selectedMarket === 'a_share' ? '600519、茅台' : 'AAPL、苹果'}`}
+              placeholder={`搜索${marketLabel}... ${selectedMarket === 'crypto' ? 'BTC、比特币' : selectedMarket === 'hk_stock' ? '0700、腾讯' : '600519、茅台'}`}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
@@ -313,7 +298,7 @@ export default function WatchlistPage() {
             )}
           </div>
 
-          {/* Dropdown results */}
+          {/* Dropdown */}
           {showDropdown && searchQuery.trim().length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-dark-850 border border-dark-700 rounded-lg shadow-xl max-h-80 overflow-y-auto">
               {searchResults.length > 0 ? (
@@ -329,25 +314,18 @@ export default function WatchlistPage() {
                       )}
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-dark-100 text-sm">{item.symbol}</span>
-                          <span className="text-dark-400 text-sm">{item.name}</span>
-                        </div>
+                        <span className="font-bold text-dark-100 text-sm">{item.symbol}</span>
+                        <span className="text-dark-400 text-sm ml-2">{item.name}</span>
                       </div>
-                      <span className="flex items-center gap-2">
-                        <svg className={cn('w-4 h-4', added ? 'text-yellow-400' : 'text-dark-600')} fill={added ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        <span className={cn('text-xs', added ? 'text-dark-500' : 'text-army-400')}>
-                          {added ? '已自选 → 查看' : '添加自选'}
-                        </span>
+                      <span className={cn('text-xs', added ? 'text-dark-500' : 'text-army-400')}>
+                        {added ? '已自选 → 查看' : '+ 添加'}
                       </span>
                     </button>
                   )
                 })
               ) : (
                 <div className="px-4 py-6 text-center text-dark-500 text-sm">
-                  <p>没有找到 "{searchQuery}"</p>
+                  <p>没有找到 &quot;{searchQuery}&quot;</p>
                   <button
                     onClick={() => {
                       handleAdd(searchQuery.trim().toUpperCase(), searchQuery.trim().toUpperCase())
@@ -364,7 +342,7 @@ export default function WatchlistPage() {
           )}
         </div>
 
-        {/* Hot tags (only when not searching) */}
+        {/* Hot tags */}
         {!searchQuery && (
           <div>
             <p className="text-xs text-dark-500 uppercase tracking-wider mb-2">热门推荐</p>
@@ -382,18 +360,14 @@ export default function WatchlistPage() {
                     )}
                   >
                     <button
-                      onClick={(e) => { e.stopPropagation(); added ? handleRemove(items.find((x: any) => x.symbol === s.symbol)?.id) : handleAdd(s.symbol, s.name) }}
+                      onClick={() => added ? handleRemove(items.find((x: any) => x.symbol === s.symbol)?.id) : handleAdd(s.symbol, s.name)}
                       className={cn('transition-colors', added ? 'text-yellow-400 hover:text-yellow-500' : 'text-dark-600 hover:text-yellow-400')}
-                      title={added ? '取消自选' : '添加自选'}
                     >
                       <svg className="w-4 h-4" fill={added ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={added ? 0 : 1.5} viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     </button>
-                    <Link
-                      href={`/company/watchlist/${encodeURIComponent(s.symbol)}`}
-                      className="hover:text-army-400 transition-colors"
-                    >
+                    <Link href={`/company/watchlist/${encodeURIComponent(s.symbol)}`} className="hover:text-army-400 transition-colors">
                       <span className="font-medium">{s.symbol}</span>
                       <span className="text-dark-500 ml-1 text-xs">{s.name}</span>
                     </Link>
@@ -405,7 +379,7 @@ export default function WatchlistPage() {
         )}
       </div>
 
-      {/* Watchlist */}
+      {/* Watchlist Cards */}
       {loading ? (
         <div className="text-center py-12 text-dark-500">加载中...</div>
       ) : items.length === 0 ? (
@@ -416,225 +390,77 @@ export default function WatchlistPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map((item: any) => (
-            <WatchlistCard
-              key={item.id}
-              item={item}
-              expanded={expandedItem === item.id}
-              analyzing={analyzing === item.id}
-              onToggle={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-              onRemove={() => handleRemove(item.id)}
-              onPriority={(p: number) => handlePriority(item.id, p)}
-              onAnalyze={() => handleAnalyze(item.id)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function WatchlistCard({
-  item,
-  expanded,
-  analyzing,
-  onToggle,
-  onRemove,
-  onPriority,
-  onAnalyze,
-}: {
-  item: any
-  expanded: boolean
-  analyzing: boolean
-  onToggle: () => void
-  onRemove: () => void
-  onPriority: (p: number) => void
-  onAnalyze: () => void
-}) {
-  const analysis = item.last_analysis || {}
-  const hasAnalysis = Object.keys(analysis).length > 0
-  const priority = PRIORITY_LABELS[item.priority] || PRIORITY_LABELS[0]
-
-  return (
-    <div className="bg-dark-900 rounded-xl border border-dark-800 overflow-hidden">
-      {/* Main row — clicking navigates to detail page */}
-      <Link
-        href={`/company/watchlist/${encodeURIComponent(item.symbol)}`}
-        className="flex items-center gap-4 p-5 hover:bg-dark-850 transition-colors"
-      >
-        {/* Priority indicator */}
-        <div className="w-1 h-10 rounded-full" style={{
-          backgroundColor: item.priority === 2 ? '#ef4444' : item.priority === 1 ? '#eab308' : '#334155'
-        }} />
-
-        {/* Symbol info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-dark-100 group-hover:text-army-400 transition-colors">
-              {item.symbol}
-            </span>
-            <span className="text-dark-500 text-sm">{item.display_name}</span>
-          </div>
-          {item.tags?.length > 0 && (
-            <div className="flex gap-1 mt-1">
-              {item.tags.map((tag: string) => (
-                <span key={tag} className="text-2xs px-2 py-0.5 bg-dark-800 text-dark-400 rounded">{tag}</span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Role analysis summary (mini) */}
-        <div className="flex gap-1">
-          {ROLES.slice(2, 6).map(role => {
-            const roleAnalysis = analysis[role.type]
+          {items.map((item: any) => {
+            const cached = mounted ? v2Cache[item.symbol] : null
             return (
-              <div
-                key={role.type}
-                className={cn(
-                  'w-8 h-8 rounded-lg flex items-center justify-center text-sm',
-                  roleAnalysis ? 'bg-dark-800' : 'bg-dark-850 opacity-40'
-                )}
-                title={roleAnalysis ? `${role.label}: 已分析` : `${role.label}: 未分析`}
+              <Link
+                key={item.id}
+                href={`/company/watchlist/${encodeURIComponent(item.symbol)}`}
+                className="flex items-center gap-4 p-5 bg-dark-900 rounded-xl border border-dark-800 hover:border-dark-700 hover:bg-dark-850 transition-all group"
               >
-                {role.icon}
-              </div>
+                {/* Priority bar */}
+                <div className="w-1 h-12 rounded-full flex-shrink-0" style={{
+                  backgroundColor: item.priority === 2 ? '#ef4444' : item.priority === 1 ? '#eab308' : '#334155'
+                }} />
+
+                {/* Symbol + Name */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-dark-100 group-hover:text-army-400 transition-colors">
+                      {item.symbol}
+                    </span>
+                    <span className="text-dark-500 text-sm">{item.display_name}</span>
+                  </div>
+                  {/* V2 verdict summary or "未分析" */}
+                  {cached ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-dark-500 text-xs">
+                        {cached.bullishCount}多 {cached.bearishCount}空 {cached.neutralCount}中
+                      </span>
+                      <span className="text-dark-600 text-xs">·</span>
+                      <span className="text-dark-500 text-xs">
+                        信心 {(cached.confidence * 100).toFixed(0)}%
+                      </span>
+                      <span className="text-dark-600 text-xs">·</span>
+                      <span className="text-dark-600 text-xs">
+                        {(() => {
+                          const age = Date.now() - new Date(cached.at).getTime()
+                          const min = Math.floor(age / 60000)
+                          return min < 60 ? `${min}分钟前` : min < 1440 ? `${Math.floor(min / 60)}小时前` : `${Math.floor(min / 1440)}天前`
+                        })()}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-dark-600 text-xs mt-1">未分析 — 点击进入分析</p>
+                  )}
+                </div>
+
+                {/* V2 Verdict Badge */}
+                {cached ? (
+                  <span className={cn('px-3 py-1.5 rounded-lg text-xs font-bold border flex-shrink-0', verdictColors[cached.verdict] || verdictColors.HOLD)}>
+                    {verdictLabels[cached.verdict] || cached.verdict}
+                  </span>
+                ) : (
+                  <span className="px-3 py-1.5 rounded-lg text-xs text-dark-600 border border-dark-800 flex-shrink-0">
+                    待分析
+                  </span>
+                )}
+
+                {/* Remove star */}
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleRemove(item.id) }}
+                  className="p-1.5 text-yellow-400 hover:text-yellow-500 transition-colors flex-shrink-0"
+                  title="取消自选"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </button>
+              </Link>
             )
           })}
         </div>
-
-        {/* Actions — stop propagation to prevent navigation */}
-        <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
-          <button
-            onClick={(e) => { e.preventDefault(); onAnalyze() }}
-            disabled={analyzing}
-            className="px-3 py-1.5 text-xs bg-army-900/30 text-army-400 hover:bg-army-900/50 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {analyzing ? '🔄' : '🔍'} 分析
-          </button>
-          <button
-            onClick={(e) => { e.preventDefault(); onRemove() }}
-            className="p-2 text-yellow-400 hover:text-yellow-500 transition-colors"
-            title="取消自选"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-          </button>
-        </div>
-      </Link>
-
-      {/* Expanded analysis panel */}
-      {expanded && (
-        <div className="border-t border-dark-800 p-5">
-          {/* Priority selector */}
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-xs text-dark-500">优先级:</span>
-            {[0, 1, 2].map(p => (
-              <button
-                key={p}
-                onClick={() => onPriority(p)}
-                className={cn(
-                  'px-3 py-1 text-xs rounded-lg border transition-colors',
-                  item.priority === p
-                    ? 'border-army-600 bg-army-900/30 text-army-400'
-                    : 'border-dark-700 text-dark-400 hover:border-dark-600'
-                )}
-              >
-                {PRIORITY_LABELS[p].icon} {PRIORITY_LABELS[p].label}
-              </button>
-            ))}
-          </div>
-
-          {/* Team Analysis Grid */}
-          {hasAnalysis ? (
-            <div className="grid grid-cols-2 gap-3">
-              {ROLES.filter(r => analysis[r.type]).map(role => (
-                <AnalysisCard key={role.type} role={role} data={analysis[role.type]} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6 text-dark-500">
-              <p className="text-3xl mb-2">🔍</p>
-              <p className="text-sm">尚未分析 — 点击"分析"让团队开始工作</p>
-            </div>
-          )}
-        </div>
       )}
-    </div>
-  )
-}
-
-function AnalysisCard({ role, data }: { role: any; data: any }) {
-  return (
-    <div className="bg-dark-850 rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-lg">{role.icon}</span>
-        <span className="text-sm font-medium" style={{ color: role.color }}>{role.label}</span>
-        {data.at && (
-          <span className="text-2xs text-dark-600 ml-auto">{new Date(data.at).toLocaleString('zh-CN')}</span>
-        )}
-      </div>
-      <div className="space-y-1 text-sm">
-        {data.signal && (
-          <div className="flex items-center gap-2">
-            <span className="text-dark-500">信号:</span>
-            <span className={cn(
-              'px-2 py-0.5 rounded text-xs font-medium',
-              data.signal === 'LONG' ? 'bg-army-900/30 text-army-400' :
-              data.signal === 'SHORT' ? 'bg-red-900/30 text-red-400' :
-              'bg-dark-800 text-dark-400'
-            )}>
-              {data.signal}
-            </span>
-            {data.confidence !== undefined && (
-              <span className="text-dark-500 text-xs">置信度 {(data.confidence * 100).toFixed(0)}%</span>
-            )}
-          </div>
-        )}
-        {data.risk_score !== undefined && (
-          <div className="flex items-center gap-2">
-            <span className="text-dark-500">风险评分:</span>
-            <span className={cn(
-              'font-medium',
-              data.risk_score <= 3 ? 'text-army-400' : data.risk_score <= 6 ? 'text-yellow-500' : 'text-red-400'
-            )}>
-              {data.risk_score}/10
-            </span>
-          </div>
-        )}
-        {data.sentiment !== undefined && (
-          <div className="flex items-center gap-2">
-            <span className="text-dark-500">市场情绪:</span>
-            <span className={cn(
-              'font-medium',
-              data.sentiment > 0.5 ? 'text-army-400' : data.sentiment < -0.2 ? 'text-red-400' : 'text-dark-300'
-            )}>
-              {data.sentiment > 0.5 ? '😊 乐观' : data.sentiment < -0.2 ? '😰 悲观' : '😐 中性'}
-              ({(data.sentiment * 100).toFixed(0)}%)
-            </span>
-          </div>
-        )}
-        {data.trend && (
-          <div className="flex items-center gap-2">
-            <span className="text-dark-500">趋势:</span>
-            <span className="text-dark-300">{data.trend}</span>
-          </div>
-        )}
-        {data.reason && (
-          <p className="text-dark-400 text-xs mt-1">{data.reason}</p>
-        )}
-        {data.notes && (
-          <p className="text-dark-400 text-xs mt-1">{data.notes}</p>
-        )}
-        {data.headlines && data.headlines.length > 0 && (
-          <div className="mt-2 space-y-1">
-            {data.headlines.slice(0, 3).map((h: string, i: number) => (
-              <p key={i} className="text-dark-500 text-xs">📰 {h}</p>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   )
 }

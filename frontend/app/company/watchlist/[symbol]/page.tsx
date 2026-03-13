@@ -61,6 +61,11 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
       const r = await runV2Analysis(decodedSymbol, onProgress)
       setResult(r)
       saveV2Result(r)
+      // Auto-prefill order side from CEO verdict
+      if (r.decision) {
+        if (r.decision.verdict === 'LONG') { setOrderSide('long'); setShowQuickOrder(true) }
+        else if (r.decision.verdict === 'SHORT') { setOrderSide('short'); setShowQuickOrder(true) }
+      }
     } catch (e: any) {
       setAnalysisError(e.message || '分析失败')
     } finally {
@@ -123,7 +128,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
       </div>
 
       {/* ── Quick Order Bar ───────────────────────────────── */}
-      {decision && decision.verdict !== 'WAIT' && decision.verdict !== 'HOLD' && (
+      {decision && (
         <QuickOrderBar
           decision={decision} symbol={decodedSymbol}
           showQuickOrder={showQuickOrder} setShowQuickOrder={setShowQuickOrder}

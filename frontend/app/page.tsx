@@ -14,7 +14,8 @@ export default function LandingPage() {
           组建你的 AI 量化交易团队
         </p>
         <p className="text-dark-500 mb-10 max-w-xl leading-7">
-          8 个独立 AI 角色，各自给出分析 — 你看到的是团队的分歧和共识，不是一个被抹平的答案。
+          8 个 AI 角色独立分析，然后互相辩论挑战 — CEO 综合投票做出最终判定。
+          你看到的不是一个答案，而是一个团队的思考过程。
           免费实时行情，100% 模拟交易，无需 API Key。
         </p>
         <div className="flex gap-4 flex-wrap justify-center">
@@ -41,8 +42,8 @@ export default function LandingPage() {
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <StepCard step="1" title="选标的" desc="从加密货币或美股中添加你感兴趣的标的到自选列表。" />
-          <StepCard step="2" title="团队分析" desc="8 个角色各自独立给出观点 — 策略师看信号，风控看风险，采集员看新闻。" />
-          <StepCard step="3" title="你来决策" desc="看到团队的共识和分歧后，你做最终判断。V2 将引入 battle 模式。" />
+          <StepCard step="2" title="团队分析 + 辩论" desc="8 个角色各自独立分析，然后互相挑战辩论 — CEO 综合投票做出判定。" />
+          <StepCard step="3" title="你来决策" desc="看到团队的共识和分歧后，你做最终判断，一键模拟下单验证。" />
         </div>
       </section>
 
@@ -74,7 +75,7 @@ export default function LandingPage() {
           <FeatureCard icon="🔌" title="技能可扩展" desc="3 张默认卡上手，熟悉后可从 GitHub 导入开源策略。" />
           <FeatureCard icon="⚡" title="多角度分析" desc="同一标的，8 个角色各抒己见，让分歧变成决策优势。" />
           <FeatureCard icon="🎯" title="用户为中心" desc="系统不自动交易，你看分析，你做决策，你掌控一切。" />
-          <FeatureCard icon="🔬" title="V2 预告：Battle" desc="角色之间辩论，CEO 聚合投票，引入有效性校验机制。" />
+          <FeatureCard icon="⚔️" title="V2 辩论引擎" desc="角色之间真实辩论，挑战 + 反驳 + 让步，CEO 聚合加权共识。" />
         </div>
       </section>
 
