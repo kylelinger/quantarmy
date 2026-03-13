@@ -3,7 +3,7 @@
  * Routes to Binance (crypto) or Yahoo Finance (stocks) automatically.
  */
 
-export type MarketType = 'crypto' | 'hk_stock' | 'a_share'
+export type MarketType = 'crypto' | 'us_stock' | 'hk_stock' | 'a_share'
 
 export interface Quote {
   symbol: string
@@ -53,12 +53,15 @@ export function detectMarket(symbol: string): MarketType {
   if (symbol.endsWith('USDT') || symbol.endsWith('BTC') || symbol.endsWith('BUSD')) return 'crypto'
   if (symbol.endsWith('.HK')) return 'hk_stock'
   if (symbol.endsWith('.SS') || symbol.endsWith('.SZ')) return 'a_share'
+  // US stocks (no suffix, no USDT) - common tickers
+  if (/^[A-Z]{1,5}$/.test(symbol)) return 'us_stock'
   return 'crypto' // fallback
 }
 
 export function marketLabel(m: MarketType): string {
   switch (m) {
     case 'crypto': return '加密货币'
+    case 'us_stock': return '美股'
     case 'hk_stock': return '港股'
     case 'a_share': return 'A股'
   }
