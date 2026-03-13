@@ -234,7 +234,7 @@ export default function WatchlistPage() {
   const verdictLabels: Record<string, string> = {
     LONG: '🟢 做多',
     SHORT: '🔴 做空',
-    HOLD: '⚪ 持有',
+    HOLD: '⚪ 观望',
     WAIT: '⏸️ 等待',
   }
 
