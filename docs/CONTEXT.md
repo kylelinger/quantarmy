@@ -56,7 +56,7 @@
 - Commit `a04f318` — live V2 engine wired into symbol detail page
 - Commit `a743bca` — detail page refactored to tabbed layout under K-line chart
 - Production alias verified:
-  - `https://frontend-beige-kappa-51.vercel.app/company/watchlist/BTCUSDT`
+  - `https://quantarmy.vercel.app/company/watchlist/BTCUSDT`
 - Verified visible tabs:
   - 团队分析
   - 辩论记录
