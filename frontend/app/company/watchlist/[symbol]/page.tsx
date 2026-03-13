@@ -37,7 +37,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
   const [orderNotional, setOrderNotional] = useState('')
   const [orderSide, setOrderSide] = useState<'long' | 'short'>('long')
   const [orderMsg, setOrderMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [activeTab, setActiveTab] = useState<TabType>('analysis')
+  const [activeTab, setActiveTab] = useState<TabType>('debate')
 
   // V2 analysis state
   const [result, setResult] = useState<V2AnalysisResult | null>(null)
@@ -209,8 +209,8 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
         <div>
           <div className="flex items-center border-b border-dark-800">
             {([
-              { key: 'analysis' as TabType, label: '🧠 团队分析', count: 7 },
               { key: 'debate' as TabType, label: '⚔️ 辩论记录', count: debate?.totalChallenges || 0 },
+              { key: 'analysis' as TabType, label: '🧠 团队分析', count: 7 },
               { key: 'memory' as TabType, label: '🧬 Agent 记忆', count: null },
             ]).map(tab => (
               <button
