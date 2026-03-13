@@ -1,17 +1,26 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useCompanyContext } from '@/lib/CompanyContext'
 import { useWatchlist } from '@/lib/hooks'
 import { ROLES } from '@/lib/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { getPortfolio, getPortfolioSummary } from '@/lib/paper-trading'
+import { listCachedResults, getV2Result, type V2CachedSummary } from '@/lib/v2/cache'
 
 export default function OverviewPage() {
   const { companyId, company, roles } = useCompanyContext()
   const { items } = useWatchlist(companyId)
   const account = getPortfolio()
   const summary = getPortfolioSummary()
+  const [mounted, setMounted] = useState(false)
+  const [cachedResults, setCachedResults] = useState<V2CachedSummary[]>([])
+
+  useEffect(() => {
+    setMounted(true)
+    setCachedResults(listCachedResults())
+  }, [])
 
   const totalEquity = summary.equity
   const totalPnl = summary.pnl
@@ -33,7 +42,7 @@ export default function OverviewPage() {
       {/* Hero Header */}
       <div>
         <h1 className="text-3xl font-bold text-dark-100">量化军团总览</h1>
-        <p className="text-dark-400 mt-2">QuantArmy v1.0 — 8 个 AI 角色，多视角量化分析</p>
+        <p className="text-dark-400 mt-2">QuantArmy v1.1 — 8 角色辩论引擎，多视角量化分析</p>
       </div>
 
       {/* Status Cards Row */}
@@ -151,6 +160,31 @@ export default function OverviewPage() {
               </div>
             )}
           </div>
+
+          {/* V2 Team Verdicts */}
+          {mounted && (
+            <div className="bg-dark-900 rounded-xl border border-dark-800 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-dark-100">📊 团队观点</h2>
+                <span className="text-dark-500 text-xs">
+                  {cachedResults.length > 0 ? `${cachedResults.length} 只已分析` : '暂无分析'}
+                </span>
+              </div>
+              {cachedResults.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-4xl mb-3">🧠</p>
+                  <p className="text-dark-400">还没有 V2 分析结果</p>
+                  <p className="text-dark-500 text-sm mt-1">进入标的详情页运行分析后，结果会显示在这里</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {cachedResults.map(c => (
+                    <VerdictRow key={c.symbol} cached={c} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right: Quick Actions + Info */}
@@ -204,10 +238,10 @@ export default function OverviewPage() {
           <div className="bg-dark-900 rounded-xl border border-dark-800 p-6">
             <h2 className="text-lg font-semibold text-dark-100 mb-4">ℹ️ 系统信息</h2>
             <div className="space-y-2 text-sm">
-              <InfoRow label="版本" value="v1.0.0" />
+              <InfoRow label="版本" value="v1.1.0-dev" />
               <InfoRow label="数据源" value="Binance · 新浪财经" />
               <InfoRow label="市场" value="加密 · 港股 · A股" />
-              <InfoRow label="分析模式" value="V1 独立分析" />
+              <InfoRow label="分析模式" value="V2 辩论引擎" />
               <InfoRow label="交易" value="纯模拟 · 非实盘" />
             </div>
           </div>
@@ -251,5 +285,53 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <span className="text-dark-500">{label}</span>
       <span className="text-dark-300">{value}</span>
     </div>
+  )
+}
+
+function VerdictRow({ cached }: { cached: V2CachedSummary }) {
+  const verdictColors: Record<string, string> = {
+    LONG: 'bg-army-900/30 text-army-400 border-army-800/30',
+    SHORT: 'bg-red-900/30 text-red-400 border-red-800/30',
+    HOLD: 'bg-dark-800 text-dark-400 border-dark-700',
+    WAIT: 'bg-dark-800 text-dark-500 border-dark-700',
+  }
+  const verdictLabels: Record<string, string> = {
+    LONG: '🟢 做多',
+    SHORT: '🔴 做空',
+    HOLD: '⚪ 持有',
+    WAIT: '⏸️ 等待',
+  }
+
+  const age = Date.now() - new Date(cached.at).getTime()
+  const ageMin = Math.floor(age / 60000)
+  const ageStr = ageMin < 60 ? `${ageMin}分钟前` : ageMin < 1440 ? `${Math.floor(ageMin / 60)}小时前` : `${Math.floor(ageMin / 1440)}天前`
+  const confidencePct = (cached.confidence * 100).toFixed(0)
+
+  return (
+    <Link
+      href={`/company/watchlist/${encodeURIComponent(cached.symbol)}`}
+      className="flex items-center gap-3 p-3 rounded-lg bg-dark-850 hover:bg-dark-800 transition-colors border border-dark-800 hover:border-dark-700"
+    >
+      {/* Symbol */}
+      <div className="flex-1 min-w-0">
+        <span className="font-bold text-dark-100 text-sm">{cached.symbol}</span>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-dark-500 text-xs">{ageStr}</span>
+          <span className="text-dark-600 text-xs">·</span>
+          <span className="text-dark-500 text-xs">{cached.bullishCount}多 {cached.bearishCount}空 {cached.neutralCount}中</span>
+        </div>
+      </div>
+
+      {/* Confidence */}
+      <div className="text-right mr-2">
+        <span className="text-dark-300 text-xs">信心</span>
+        <p className="text-dark-200 text-sm font-medium">{confidencePct}%</p>
+      </div>
+
+      {/* Verdict badge */}
+      <span className={cn('px-2.5 py-1 rounded-lg text-xs font-bold border', verdictColors[cached.verdict] || verdictColors.HOLD)}>
+        {verdictLabels[cached.verdict] || cached.verdict}
+      </span>
+    </Link>
   )
 }

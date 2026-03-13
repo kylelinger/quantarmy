@@ -13,6 +13,7 @@ import { detectMarket } from '@/lib/market-adapter'
 import { runV2Analysis, type ProgressCallback } from '@/lib/v2/orchestrator'
 import type { V2AnalysisResult, AgentOutput, CEODecision, DebateTranscript, AnalysisPhase, RoleType } from '@/lib/v2/types'
 import { getAgentMemory } from '@/lib/v2/memory/store'
+import { saveV2Result } from '@/lib/v2/cache'
 
 type TabType = 'analysis' | 'debate' | 'memory'
 
@@ -59,6 +60,7 @@ export default function SymbolDetailPage({ params }: { params: Promise<{ symbol:
       }
       const r = await runV2Analysis(decodedSymbol, onProgress)
       setResult(r)
+      saveV2Result(r)
     } catch (e: any) {
       setAnalysisError(e.message || '分析失败')
     } finally {
